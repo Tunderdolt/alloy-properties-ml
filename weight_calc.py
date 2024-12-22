@@ -23,16 +23,10 @@ flip = False
 formula_list = []
 k = 0
 
-if test_list[1].isalpha() == True:
-    formula_list.append(test_list[0] + test_list[1])
-
-elif test_list[1].isalpha == False:
-    formula_list.append(test_list[0])
-
-for i in range(0, len(test_list)):
-    if flip == False:
+for i in range(1, len(test_list)):
+    if not flip:
         k += 1
-        if test_list[i].isalpha() == False:
+        if not test_list[i].isalpha():
             flip = True
 
             if k == 1:
@@ -42,11 +36,10 @@ for i in range(0, len(test_list)):
                 formula_list.append(test_list[i-2] + test_list[i-1])
             
             k = 0
-            final_element = i
     
-    elif flip == True:
+    elif flip:
         k += 1
-        if test_list[i].isalpha() == True:
+        if test_list[i].isalpha():
             flip = False
 
             intermediate = ''
@@ -55,11 +48,12 @@ for i in range(0, len(test_list)):
             formula_list.append(intermediate)
 
             k = 0
-
-intermediate = ''
-for i in range(final_element, len(test_list)):
-    intermediate += test_list[i]
-formula_list.append(intermediate)
+        
+        elif i == len(test_list) - 1:
+            intermediate = ''
+            for j in range(i - k, i + 1):
+                intermediate += test_list[j]
+            formula_list.append(intermediate)
 
 formula_tuple_list: list[tuple[str, float]] = []
 
@@ -67,7 +61,6 @@ for i in range(0, len(formula_list), 2):
     formula_tuple_list.append(tuple((formula_list[i], float(formula_list[i+1]))))
 
 formula_dict = dict(formula_tuple_list)
-
 weight_dict_intermediate: dict[str, float] = {}
 
 for key in formula_dict:
@@ -81,7 +74,3 @@ for key in weight_dict_intermediate:
     weight_dict[key] = round(100 * weight_dict_intermediate[key] / total_weight, 2)
 
 print(weight_dict)
-
-weight_tuple = [(x, v) for x, v in weight_dict.items()]
-
-print(weight_tuple)
