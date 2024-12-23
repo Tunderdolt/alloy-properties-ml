@@ -20,7 +20,7 @@ ELEMENT_WEIGHT: dict[str, float] = {
     'Ti': 47.867
 }
 
-class CleanDatabase:
+class DataframeWriter:
     def __init__(self):
         pass
 
@@ -84,51 +84,90 @@ class CleanDatabase:
         return weight_dict
 
     def data_fill(self, data: pd.DataFrame):
-        Fe_calc = []
-        C_calc = []
-        Mn_calc = []
-        Si_calc = []
-        Cr_calc = []
-        Ni_calc = []
-        Mo_calc = []
-        V_calc = []
-        N_calc = []
-        Nb_calc = []
-        Co_calc = []
-        W_calc = []
-        Al_calc = []
-        Ti_calc = []
+        fe_calc = []
+        c_calc = []
+        mn_calc = []
+        si_calc = []
+        cr_calc = []
+        ni_calc = []
+        mo_calc = []
+        v_calc = []
+        n_calc = []
+        nb_calc = []
+        co_calc = []
+        w_calc = []
+        al_calc = []
+        ti_calc = []
 
         for i in range(0, len(data.index)):
             weight_dict: dict = self.atom_to_weight_percent(data.iat[i, 0])
-            Fe_calc.append(weight_dict.get('Fe', 0))
-            C_calc.append(weight_dict.get('C', 0))
-            Mn_calc.append(weight_dict.get('Mn', 0))
-            Si_calc.append(weight_dict.get('Si', 0))
-            Cr_calc.append(weight_dict.get('Cr', 0))
-            Ni_calc.append(weight_dict.get('Ni', 0))
-            Mo_calc.append(weight_dict.get('Mo', 0))
-            V_calc.append(weight_dict.get('V', 0))
-            N_calc.append(weight_dict.get('N', 0))
-            Nb_calc.append(weight_dict.get('Nb', 0))
-            Co_calc.append(weight_dict.get('Co', 0))
-            W_calc.append(weight_dict.get('W', 0))
-            Al_calc.append(weight_dict.get('Al', 0))
-            Ti_calc.append(weight_dict.get('Ti', 0))
+            fe_calc.append(weight_dict.get('Fe', 0))
+            c_calc.append(weight_dict.get('C', 0))
+            mn_calc.append(weight_dict.get('Mn', 0))
+            si_calc.append(weight_dict.get('Si', 0))
+            cr_calc.append(weight_dict.get('Cr', 0))
+            ni_calc.append(weight_dict.get('Ni', 0))
+            mo_calc.append(weight_dict.get('Mo', 0))
+            v_calc.append(weight_dict.get('V', 0))
+            n_calc.append(weight_dict.get('N', 0))
+            nb_calc.append(weight_dict.get('Nb', 0))
+            co_calc.append(weight_dict.get('Co', 0))
+            w_calc.append(weight_dict.get('W', 0))
+            al_calc.append(weight_dict.get('Al', 0))
+            ti_calc.append(weight_dict.get('Ti', 0))
 
-        data['Fe_calc'] = Fe_calc
-        data['C_calc'] = C_calc
-        data['Mn_calc'] = Mn_calc
-        data['Si_calc'] = Si_calc
-        data['Cr_calc'] = Cr_calc
-        data['Ni_calc'] = Ni_calc
-        data['Mo_calc'] = Mo_calc
-        data['V_calc'] = V_calc
-        data['N_calc'] = N_calc
-        data['Nb_calc'] = Nb_calc
-        data['Co_calc'] = Co_calc
-        data['W_calc'] = W_calc
-        data['Al_calc'] = Al_calc
-        data['Ti_calc'] = Ti_calc
+        data['fe_calc'] = fe_calc
+        data['c_calc'] = c_calc
+        data['mn_calc'] = mn_calc
+        data['si_calc'] = si_calc
+        data['cr_calc'] = cr_calc
+        data['ni_calc'] = ni_calc
+        data['mo_calc'] = mo_calc
+        data['v_calc'] = v_calc
+        data['n_calc'] = n_calc
+        data['nb_calc'] = nb_calc
+        data['co_calc'] = co_calc
+        data['w_calc'] = w_calc
+        data['al_calc'] = al_calc
+        data['ti_calc'] = ti_calc
 
         return data
+
+def grad_descent(data: pd.DataFrame):
+    data['a'] = np.zeros(len(data.index))
+    for i in range(0, len(data.index)):
+        learning_rate = 0.1
+        composition_vector = np.array([
+            data.fe[i],
+            data.c.combine_first(data.c_calc)[i],
+            data.mn.combine_first(data.mn_calc)[i],
+            data.si.combine_first(data.si_calc)[i],
+            data.cr.combine_first(data.cr_calc)[i],
+            data.ni.combine_first(data.ni_calc)[i],
+            data.mo.combine_first(data.mo_calc)[i],
+            data.v.combine_first(data.v_calc)[i],
+            data.n.combine_first(data.n_calc)[i],
+            data.nb.combine_first(data.nb_calc)[i],
+            data.co.combine_first(data.co_calc)[i],
+            data.w.combine_first(data.w_calc)[i],
+            data.al.combine_first(data.al_calc)[i],
+            data.ti.combine_first(data.ti_calc)[i]
+        ])
+
+        properties_vector = np.array([
+            data.loc[i]["yield strength"]
+            data.loc[i]["tensile strength"]
+            data.loc[i]["elongation"]
+        ])
+
+        a = np.zeros([3])
+        for j in range(0, 3):
+            a_n = np.random.rand(14)
+            continue_iterations = True
+            while continue_iterations:
+                a_n_1 = a_n - learning_rate * (properties_vector[j] - np.dot(a_n, composition_vector))
+                if abs(a_n_1 - a_n) < 10:
+                    continue_iterations = False
+                    a[j] = a_n_1
+        
+        data['a'][i] = a
