@@ -3,22 +3,26 @@
 import numpy as np
 import pandas as pd
 import sklearn.linear_model
+from sklearn.metrics import r2_score
+
+ELEMENTS = ["fe", "c", "mn", "si", "cr", "ni", "mo", "v", "n", "nb", "co", "w", "al", "ti"]
+PROPERTIES = ["yield_strength", "tensile_strength", "elongation"]
 
 ELEMENT_WEIGHT: dict[str, float] = {
-    'Fe': 55.845,
-    'C': 12.011,
-    'Mn': 54.938,
-    'Si': 28.086,
-    'Cr': 51.996,
-    'Ni': 58.693,
-    'Mo': 95.94,
-    'V':50.942,
-    'N':14.007,
-    'Nb': 92.906,
-    'Co': 58.933,
-    'W':183.84,
-    'Al': 26.982,
-    'Ti': 47.867
+    'fe': 55.845,
+    'c': 12.011,
+    'mn': 54.938,
+    'si': 28.086,
+    'cr': 51.996,
+    'ni': 58.693,
+    'mo': 95.94,
+    'v':50.942,
+    'n':14.007,
+    'nb': 92.906,
+    'co': 58.933,
+    'w':183.84,
+    'al': 26.982,
+    'ti': 47.867
 }
 
 class DataframeWriter:
@@ -102,20 +106,20 @@ class DataframeWriter:
 
         for i in range(0, len(self.data.index)):
             weight_dict: dict = self.atom_to_weight_percent(self.data['formula'][i])
-            fe_calc.append(weight_dict.get('Fe', 0))
-            c_calc.append(weight_dict.get('C', 0))
-            mn_calc.append(weight_dict.get('Mn', 0))
-            si_calc.append(weight_dict.get('Si', 0))
-            cr_calc.append(weight_dict.get('Cr', 0))
-            ni_calc.append(weight_dict.get('Ni', 0))
-            mo_calc.append(weight_dict.get('Mo', 0))
-            v_calc.append(weight_dict.get('V', 0))
-            n_calc.append(weight_dict.get('N', 0))
-            nb_calc.append(weight_dict.get('Nb', 0))
-            co_calc.append(weight_dict.get('Co', 0))
-            w_calc.append(weight_dict.get('W', 0))
-            al_calc.append(weight_dict.get('Al', 0))
-            ti_calc.append(weight_dict.get('Ti', 0))
+            fe_calc.append(weight_dict.get('fe', 0))
+            c_calc.append(weight_dict.get('c', 0))
+            mn_calc.append(weight_dict.get('mn', 0))
+            si_calc.append(weight_dict.get('si', 0))
+            cr_calc.append(weight_dict.get('cr', 0))
+            ni_calc.append(weight_dict.get('ni', 0))
+            mo_calc.append(weight_dict.get('mo', 0))
+            v_calc.append(weight_dict.get('v', 0))
+            n_calc.append(weight_dict.get('n', 0))
+            nb_calc.append(weight_dict.get('nb', 0))
+            co_calc.append(weight_dict.get('co', 0))
+            w_calc.append(weight_dict.get('w', 0))
+            al_calc.append(weight_dict.get('al', 0))
+            ti_calc.append(weight_dict.get('ti', 0))
 
         self.data['fe_calc'] = fe_calc
         self.data['c_calc'] = c_calc
@@ -135,36 +139,10 @@ class DataframeWriter:
         return self.data
 
 def a_calc(data: pd.DataFrame):
-    composition_vectors = np.zeros([len(data.index), 14])
-    properties_vectors = np.zeros([len(data.index), 3])
+    data = data.dropna()
+    composition_vectors = data[[element for element in ELEMENTS]].to_numpy()
+    properties_vectors = data[[properties for properties in PROPERTIES]].to_numpy()
 
-    for i in range(0, len(data.index)):
-        if np.isnan(alloy_properties['tensile strength'][i]) or np.isnan(alloy_properties['yield strength'][i]) or np.isnan(alloy_properties['elongation'][i]):
-            continue
-
-        composition_vectors[i] = np.array([
-            data.fe_calc[i],
-            data.c.combine_first(data.c_calc)[i],
-            data.mn.combine_first(data.mn_calc)[i],
-            data.si.combine_first(data.si_calc)[i],
-            data.cr.combine_first(data.cr_calc)[i],
-            data.ni.combine_first(data.ni_calc)[i],
-            data.mo.combine_first(data.mo_calc)[i],
-            data.v.combine_first(data.v_calc)[i],
-            data.n.combine_first(data.n_calc)[i],
-            data.nb.combine_first(data.nb_calc)[i],
-            data.co.combine_first(data.co_calc)[i],
-            data.w.combine_first(data.w_calc)[i],
-            data.al.combine_first(data.al_calc)[i],
-            data.ti.combine_first(data.ti_calc)[i]
-        ])
-        
-        properties_vectors[i] = np.array([
-        data.loc[i]["yield strength"],
-        data.loc[i]["tensile strength"],
-        data.loc[i]["elongation"]
-        ])
-        
     model = sklearn.linear_model.LinearRegression(fit_intercept = False)
     model.fit(composition_vectors, properties_vectors)
 
@@ -173,51 +151,51 @@ def a_calc(data: pd.DataFrame):
     return A
         
 alloy_properties = pd.read_csv(r"C:\Users\sambi\Programming\alloy-properties-ml\database_steel_properties.csv", skiprows=1)
+alloy_properties['formula'] = alloy_properties['formula'].apply(lambda value: value.lower())
 
 dataframe_writer = DataframeWriter(alloy_properties)
 
 alloy_properties = dataframe_writer.data_fill()
 
-A_learned = a_calc(alloy_properties)
+refined_alloy_properties = pd.DataFrame(
+    {
+        element: alloy_properties[element].combine_first(alloy_properties[f"{element}_calc"])
+        for element in ELEMENTS if element != "fe"
+    }
+)
+refined_alloy_properties["fe"] = alloy_properties["fe_calc"]
+refined_alloy_properties["combined_compositions"] = refined_alloy_properties[[element for element in ELEMENTS]].values.tolist()
+refined_alloy_properties["yield_strength"] = alloy_properties["yield strength"]
+refined_alloy_properties["tensile_strength"] = alloy_properties["tensile strength"]
+refined_alloy_properties["elongation"] = alloy_properties["elongation"]
+refined_alloy_properties["combined_properties"] = refined_alloy_properties[[properties for properties in PROPERTIES]].values.tolist()
+refined_alloy_properties["combined_properties"] = refined_alloy_properties["combined_properties"].apply(lambda prop: np.array(prop))
 
-y_sum_1 = 0
-y_sum_2 = 0
-y_sum_3 = 0
-num_check = 0
+A_learned = a_calc(refined_alloy_properties)
 
-for k in range(0, len(alloy_properties.index)):
-    if np.isnan(alloy_properties['tensile strength'][k]) or np.isnan(alloy_properties['yield strength'][k]) or np.isnan(alloy_properties['elongation'][k]):
-        continue
+composition_vectors = refined_alloy_properties[[element for element in ELEMENT_WEIGHT.keys()]].to_numpy()
 
-    num_check +=1
-    composition_vector = np.array([
-        [alloy_properties.fe_calc[k]],
-        [alloy_properties.c.combine_first(alloy_properties.c_calc)[k]],
-        [alloy_properties.mn.combine_first(alloy_properties.mn_calc)[k]],
-        [alloy_properties.si.combine_first(alloy_properties.si_calc)[k]],
-        [alloy_properties.cr.combine_first(alloy_properties.cr_calc)[k]],
-        [alloy_properties.ni.combine_first(alloy_properties.ni_calc)[k]],
-        [alloy_properties.mo.combine_first(alloy_properties.mo_calc)[k]],
-        [alloy_properties.v.combine_first(alloy_properties.v_calc)[k]],
-        [alloy_properties.n.combine_first(alloy_properties.n_calc)[k]],
-        [alloy_properties.nb.combine_first(alloy_properties.nb_calc)[k]],
-        [alloy_properties.co.combine_first(alloy_properties.co_calc)[k]],
-        [alloy_properties.w.combine_first(alloy_properties.w_calc)[k]],
-        [alloy_properties.al.combine_first(alloy_properties.al_calc)[k]],
-        [alloy_properties.ti.combine_first(alloy_properties.ti_calc)[k]]
-    ])
+refined_alloy_properties["predicted"] = refined_alloy_properties["combined_compositions"].apply(lambda prop: np.matmul(A_learned, prop))
 
-    properties_vector = np.array([
-        alloy_properties["yield strength"][k],
-        alloy_properties["tensile strength"][k],
-        alloy_properties["elongation"][k]
-    ])
+reduced_alloy_properties = refined_alloy_properties.dropna()
 
-    y_calc = np.matmul(A_learned, composition_vector)
-    y_sum_1 += abs(properties_vector[0] - y_calc[0])
-    y_sum_2 += abs(properties_vector[1] - y_calc[1])
-    y_sum_3 += abs(properties_vector[2] - y_calc[2])
+properties_array = np.array(reduced_alloy_properties["combined_properties"].values.tolist())
+predicted_array = np.array(reduced_alloy_properties["predicted"].values.tolist())
 
-average_y_deviation = np.array([y_sum_1, y_sum_2, y_sum_3]) / num_check
+r_squared = r2_score(
+    properties_array,
+    predicted_array,
+    multioutput="raw_values",
+)
 
-print(average_y_deviation)
+print(r_squared)
+
+difference_array = properties_array - predicted_array
+
+std_yield_strength = np.sqrt(np.sum(np.square(difference_array), axis=0)[0] / difference_array.shape[0])
+std_tensile_strength = np.sqrt(np.sum(np.square(difference_array), axis=0)[1] / difference_array.shape[0])
+std_elongation = np.sqrt(np.sum(np.square(difference_array), axis=0)[2] / difference_array.shape[0])
+
+print(std_yield_strength)
+print(std_tensile_strength)
+print(std_elongation)
