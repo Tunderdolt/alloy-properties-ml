@@ -1,12 +1,16 @@
 #Main 
 
+from typing import Literal, get_args
 import numpy as np
 import pandas as pd
 import sklearn.linear_model
 from sklearn.metrics import r2_score
 
-ELEMENTS = ["fe", "c", "mn", "si", "cr", "ni", "mo", "v", "n", "nb", "co", "w", "al", "ti"]
-PROPERTIES = ["yield_strength", "tensile_strength", "elongation"]
+Element = Literal["fe", "c", "mn", "si", "cr", "ni", "mo", "v", "n", "nb", "co", "w", "al", "ti"]
+Property = Literal["yield_strength", "tensile_strength", "elongation"]
+
+ELEMENTS: list[Element] = list(get_args(Element))
+PROPERTIES: list[Property] = list(get_args(Property))
 
 ELEMENT_WEIGHT: dict[str, float] = {
     'fe': 55.845,
@@ -16,11 +20,11 @@ ELEMENT_WEIGHT: dict[str, float] = {
     'cr': 51.996,
     'ni': 58.693,
     'mo': 95.94,
-    'v':50.942,
-    'n':14.007,
+    'v': 50.942,
+    'n': 14.007,
     'nb': 92.906,
     'co': 58.933,
-    'w':183.84,
+    'w': 183.84,
     'al': 26.982,
     'ti': 47.867
 }
@@ -168,19 +172,20 @@ refined_alloy_properties["combined_compositions"] = refined_alloy_properties[[el
 refined_alloy_properties["yield_strength"] = alloy_properties["yield strength"]
 refined_alloy_properties["tensile_strength"] = alloy_properties["tensile strength"]
 refined_alloy_properties["elongation"] = alloy_properties["elongation"]
-refined_alloy_properties["combined_properties"] = refined_alloy_properties[[properties for properties in PROPERTIES]].values.tolist()
+refined_alloy_properties["combined_properties"] = refined_alloy_properties[[prop for prop in PROPERTIES]].values.tolist()
 refined_alloy_properties["combined_properties"] = refined_alloy_properties["combined_properties"].apply(lambda prop: np.array(prop))
 
 A_learned = a_calc(refined_alloy_properties)
 
 composition_vectors = refined_alloy_properties[[element for element in ELEMENT_WEIGHT.keys()]].to_numpy()
 
-refined_alloy_properties["predicted"] = refined_alloy_properties["combined_compositions"].apply(lambda prop: np.matmul(A_learned, prop))
+refined_alloy_properties["elongation_predicted"] = refined_alloy_properties["combined_compositions"].apply(lambda prop: np.matmul(A_learned, prop)[2])
+refined_alloy_properties["combined_predicted"] = refined_alloy_properties["combined_compositions"].apply(lambda prop: np.matmul(A_learned, prop))
 
 reduced_alloy_properties = refined_alloy_properties.dropna()
 
 properties_array = np.array(reduced_alloy_properties["combined_properties"].values.tolist())
-predicted_array = np.array(reduced_alloy_properties["predicted"].values.tolist())
+predicted_array = np.array(reduced_alloy_properties["combined_predicted"].values.tolist())
 
 r_squared = r2_score(
     properties_array,
@@ -199,3 +204,34 @@ std_elongation = np.sqrt(np.sum(np.square(difference_array), axis=0)[2] / differ
 print(std_yield_strength)
 print(std_tensile_strength)
 print(std_elongation)
+
+print(refined_alloy_properties)
+
+ElongationCategory = Literal["weak", "medium", "strong", "NaN"]
+
+def categorise_elongation(elongation: float) -> ElongationCategory:
+    if np.isnan(elongation):
+        return np.nan
+    if elongation < 5:
+        return "weak"
+    if elongation > 10:
+        return "strong"
+    return "medium"
+
+refined_alloy_properties["elongation_catagorised_true"] = refined_alloy_properties["elongation"].apply(categorise_elongation)
+
+refined_alloy_properties["elongation_catagorised_predicted"] = refined_alloy_properties["elongation_predicted"].apply(categorise_elongation)
+
+print(refined_alloy_properties)
+
+count_have_data = 0
+count_not_equal = 0
+
+for i in range(0, len(refined_alloy_properties.index)):
+    if refined_alloy_properties.loc[i, "elongation_catagorised_true"] == "NaN":
+        continue
+    count_have_data += 1
+    if refined_alloy_properties.loc[i, "elongation_catagorised_true"] != refined_alloy_properties.loc[i, "elongation_catagorised_predicted"]:
+        count_not_equal +=1
+
+print(count_not_equal / count_have_data)
