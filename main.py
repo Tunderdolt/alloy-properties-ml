@@ -339,14 +339,14 @@ print("The percentage of incorrect assignments of elongation is {0}".format(coun
 #print("The percentage of incorrect assignments of elongation for sample 1 is {0}".format(count_not_equal_1 / count_have_data))
 #print("The percentage of incorrect assignments of elongation for sample 2 is {0}".format(count_not_equal_2 / count_have_data))
 
-logged_std_ys = np.zeros(2000)
-logged_std_ts = np.zeros(2000)
-logged_std_e = np.zeros(2000)
-logged_r_squared_ys = np.zeros(2000)
-logged_r_squared_ts = np.zeros(2000)
-logged_r_squared_e = np.zeros(2000)
+logged_std_ys = np.zeros(20000)
+logged_std_ts = np.zeros(20000)
+logged_std_e = np.zeros(20000)
+logged_r_squared_ys = np.zeros(20000)
+logged_r_squared_ts = np.zeros(20000)
+logged_r_squared_e = np.zeros(20000)
 
-for i in range(0, 2000, 2):
+for i in range(0, 20000, 2):
     sampled_data = DataframeWriter.data_shuffler(test_alloy_properties, 3)
     alloy_properties_sample_1 = sampled_data.loc[0:103]
     alloy_properties_sample_2 = sampled_data.loc[104:207]
@@ -388,10 +388,10 @@ for i in range(0, 2000, 2):
     difference_array_2 = properties_array - predicted_array_2
 
     logged_std_ys[i] = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[0] / difference_array_1.shape[0])
-    logged_std_ys[i+1] = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[1] / difference_array_1.shape[0])
-    logged_std_ts[i] = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[2] / difference_array_1.shape[0])
-    logged_std_ts[i+1] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[0] / difference_array_2.shape[0])
-    logged_std_e[i] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[1] / difference_array_2.shape[0])
+    logged_std_ys[i+1] = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[0] / difference_array_1.shape[0])
+    logged_std_ts[i] = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[1] / difference_array_1.shape[0])
+    logged_std_ts[i+1] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[1] / difference_array_2.shape[0])
+    logged_std_e[i] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[2] / difference_array_2.shape[0])
     logged_std_e[i+1] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[2] / difference_array_2.shape[0])
 
 errors_df = pd.DataFrame([])
@@ -407,8 +407,8 @@ figure, axis = plt.subplots(2, 3)
 sns.kdeplot(data=errors_df, x="yield_stress_R^2", clip=(0.0,1.0), ax=axis[0, 0])
 sns.kdeplot(data=errors_df, x="tensile_stress_R^2", clip=(0.0,1.0), ax=axis[0, 1])
 sns.kdeplot(data=errors_df, x="elongation_R^2", clip=(0.0,1.0), ax=axis[0, 2])
-sns.kdeplot(data=errors_df, x="yield_stress_std", ax=axis[1, 0])
-sns.kdeplot(data=errors_df, x="tensile_stress_std", ax=axis[1, 1])
-sns.kdeplot(data=errors_df, x="elongation_std", ax=axis[1, 2])
+sns.kdeplot(data=errors_df, x="yield_stress_std", clip=(0.0, 500.0), ax=axis[1, 0])
+sns.kdeplot(data=errors_df, x="tensile_stress_std", clip=(0.0, 500.0), ax=axis[1, 1])
+sns.kdeplot(data=errors_df, x="elongation_std", clip=(0.0, 12.5), ax=axis[1, 2])
 
 plt.show()
