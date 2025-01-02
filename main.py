@@ -339,14 +339,26 @@ print("The percentage of incorrect assignments of elongation is {0}".format(coun
 #print("The percentage of incorrect assignments of elongation for sample 1 is {0}".format(count_not_equal_1 / count_have_data))
 #print("The percentage of incorrect assignments of elongation for sample 2 is {0}".format(count_not_equal_2 / count_have_data))
 
-logged_std_ys = np.zeros(20000)
-logged_std_ts = np.zeros(20000)
-logged_std_e = np.zeros(20000)
-logged_r_squared_ys = np.zeros(20000)
-logged_r_squared_ts = np.zeros(20000)
-logged_r_squared_e = np.zeros(20000)
+def calculate_mape(actual, predicted) -> float:  
+    if not all([isinstance(actual, np.ndarray), 
+                isinstance(predicted, np.ndarray)]): 
+        actual, predicted = np.array(actual),  
+        np.array(predicted) 
 
-for i in range(0, 20000, 2):
+    return round(np.mean(np.abs(( 
+      actual - predicted) / actual)) * 100, 2) 
+
+logged_std_ys = np.zeros(10000)
+logged_std_ts = np.zeros(10000)
+logged_std_e = np.zeros(10000)
+logged_r_squared_ys = np.zeros(10000)
+logged_r_squared_ts = np.zeros(10000)
+logged_r_squared_e = np.zeros(10000)
+logged_mape_ys = np.zeros(10000)
+logged_mape_ts = np.zeros(10000)
+logged_mape_e = np.zeros(10000)
+
+for i in range(0, 10000, 2):
     sampled_data = DataframeWriter.data_shuffler(test_alloy_properties, 3)
     alloy_properties_sample_1 = sampled_data.loc[0:103]
     alloy_properties_sample_2 = sampled_data.loc[104:207]
@@ -394,6 +406,13 @@ for i in range(0, 20000, 2):
     logged_std_e[i] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[2] / difference_array_2.shape[0])
     logged_std_e[i+1] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[2] / difference_array_2.shape[0])
 
+    logged_mape_ys[i] = calculate_mape(properties_array[:,0], predicted_array_1[:,0])
+    logged_mape_ys[i+1] = calculate_mape(properties_array[:,0], predicted_array_2[:, 0])
+    logged_mape_ts[i] = calculate_mape(properties_array[:,1], predicted_array_1[:,1])
+    logged_mape_ts[i+1] = calculate_mape(properties_array[:,1], predicted_array_2[:, 1])
+    logged_mape_e[i] = calculate_mape(properties_array[:,2], predicted_array_1[:,2])
+    logged_mape_e[i+1] = calculate_mape(properties_array[:,2], predicted_array_2[:, 2])
+
 errors_df = pd.DataFrame([])
 errors_df["yield_stress_R^2"] = logged_r_squared_ys
 errors_df["tensile_stress_R^2"] = logged_r_squared_ts
@@ -401,8 +420,11 @@ errors_df["elongation_R^2"] = logged_r_squared_e
 errors_df["yield_stress_std"] = logged_std_ys
 errors_df["tensile_stress_std"] = logged_std_ts
 errors_df["elongation_std"] = logged_std_e
+errors_df["yield_stress_mape"] = logged_mape_ys
+errors_df["tensile_stress_mape"] = logged_mape_ts
+errors_df["elongation_mape"] = logged_mape_e
 
-figure, axis = plt.subplots(2, 3)
+figure, axis = plt.subplots(3, 3)
 
 sns.kdeplot(data=errors_df, x="yield_stress_R^2", clip=(0.0,1.0), ax=axis[0, 0])
 sns.kdeplot(data=errors_df, x="tensile_stress_R^2", clip=(0.0,1.0), ax=axis[0, 1])
@@ -410,5 +432,8 @@ sns.kdeplot(data=errors_df, x="elongation_R^2", clip=(0.0,1.0), ax=axis[0, 2])
 sns.kdeplot(data=errors_df, x="yield_stress_std", clip=(0.0, 500.0), ax=axis[1, 0])
 sns.kdeplot(data=errors_df, x="tensile_stress_std", clip=(0.0, 500.0), ax=axis[1, 1])
 sns.kdeplot(data=errors_df, x="elongation_std", clip=(0.0, 12.5), ax=axis[1, 2])
+sns.kdeplot(data=errors_df, x="yield_stress_mape", clip=(0.0,100.0), ax=axis[2, 0])
+sns.kdeplot(data=errors_df, x="tensile_stress_mape", clip=(0.0,100.0), ax=axis[2, 1])
+sns.kdeplot(data=errors_df, x="elongation_mape", clip=(0.0,100.0), ax=axis[2, 2])
 
 plt.show()
