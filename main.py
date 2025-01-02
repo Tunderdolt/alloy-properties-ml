@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import sklearn.linear_model
 from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
+import seaborn as sns
 pd.options.mode.chained_assignment = None
 
 Element = Literal["fe", "c", "mn", "si", "cr", "ni", "mo", "v", "n", "nb", "co", "w", "al", "ti"]
@@ -272,67 +274,141 @@ for i in range(0, len(refined_alloy_properties.index)):
 
 print("The percentage of incorrect assignments of elongation is {0}".format(count_not_equal / count_have_data))
 
-sampled_data = DataframeWriter.data_shuffler(test_alloy_properties, 3)
+#sampled_data = DataframeWriter.data_shuffler(test_alloy_properties, 3)
+#
+#alloy_properties_sample_1 = sampled_data.loc[0:103]
+#alloy_properties_sample_2 = sampled_data.loc[104:207]
+#alloy_properties_sample_3 = sampled_data.loc[208:311]
+#comparison_sample = alloy_properties_sample_3.dropna().reset_index()
+#
+#A_sample_1 = a_calc(alloy_properties_sample_1)
+#A_sample_2 = a_calc(alloy_properties_sample_2)
+#
+#comparison_sample["combined_predicted_1"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_1, prop))
+#comparison_sample["elongation_predicted_1"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_1, prop)[2])
+#comparison_sample["combined_predicted_2"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_2, prop))
+#comparison_sample["elongation_predicted_2"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_2, prop)[2])
+#
+#properties_array = np.array(comparison_sample["combined_properties"].values.tolist())
+#predicted_array_1 = np.array(comparison_sample["combined_predicted_1"].values.tolist())
+#predicted_array_2 = np.array(comparison_sample["combined_predicted_2"].values.tolist())
+#
+#r_squared_1 = r2_score(
+#    properties_array,
+#    predicted_array_1,
+#    multioutput="raw_values",
+#)
+#
+#r_squared_2 = r2_score(
+#    properties_array,
+#    predicted_array_2,
+#    multioutput="raw_values",
+#)
+#
+#print("The R^2 for sample 1 is {0}".format(r_squared_1))
+#print("The R^2 for sample 2 is {0}".format(r_squared_2))
+#
+#difference_array_1 = properties_array - predicted_array_1
+#difference_array_2 = properties_array - predicted_array_2
+#
+#std_yield_strength_1 = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[0] / difference_array_1.shape[0])
+#std_tensile_strength_1 = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[1] / difference_array_1.shape[0])
+#std_elongation_1 = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[2] / difference_array_1.shape[0])
+#std_yield_strength_2 = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[0] / difference_array_2.shape[0])
+#std_tensile_strength_2 = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[1] / difference_array_2.shape[0])
+#std_elongation_2 = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[2] / difference_array_2.shape[0])
+#
+#print("The std for sample 1 is {0}".format([std_yield_strength_1, std_tensile_strength_1, std_elongation_1]))
+#print("The std for sample 2 is {0}".format([std_yield_strength_2, std_tensile_strength_2, std_elongation_2]))
+#
+#comparison_sample["elongation_catagorised_true"] = comparison_sample["elongation"].apply(categorise_elongation)
+#comparison_sample["elongation_catagorised_predicted_1"] = comparison_sample["elongation_predicted_1"].apply(categorise_elongation)
+#comparison_sample["elongation_catagorised_predicted_2"] = comparison_sample["elongation_predicted_2"].apply(categorise_elongation)
+#
+#count_have_data = 0
+#count_not_equal_1 = 0
+#count_not_equal_2 = 0
+#
+#for i in range(0, len(comparison_sample.index)):
+#    count_have_data += 1
+#    if comparison_sample.loc[i, "elongation_catagorised_true"] != comparison_sample.loc[i, "elongation_catagorised_predicted_1"]:
+#        count_not_equal_1 += 1
+#    elif comparison_sample.loc[i, "elongation_catagorised_true"] != comparison_sample.loc[i, "elongation_catagorised_predicted_2"]:
+#        count_not_equal_2 += 1
+#
+#print("The percentage of incorrect assignments of elongation for sample 1 is {0}".format(count_not_equal_1 / count_have_data))
+#print("The percentage of incorrect assignments of elongation for sample 2 is {0}".format(count_not_equal_2 / count_have_data))
 
-alloy_properties_sample_1 = sampled_data.loc[0:103]
-alloy_properties_sample_2 = sampled_data.loc[104:207]
-alloy_properties_sample_3 = sampled_data.loc[208:311]
-comparison_sample = alloy_properties_sample_3.dropna().reset_index()
+logged_std_ys = np.zeros(2000)
+logged_std_ts = np.zeros(2000)
+logged_std_e = np.zeros(2000)
+logged_r_squared_ys = np.zeros(2000)
+logged_r_squared_ts = np.zeros(2000)
+logged_r_squared_e = np.zeros(2000)
 
-A_sample_1 = a_calc(alloy_properties_sample_1)
-A_sample_2 = a_calc(alloy_properties_sample_2)
+for i in range(0, 2000, 2):
+    sampled_data = DataframeWriter.data_shuffler(test_alloy_properties, 3)
+    alloy_properties_sample_1 = sampled_data.loc[0:103]
+    alloy_properties_sample_2 = sampled_data.loc[104:207]
+    alloy_properties_sample_3 = sampled_data.loc[208:311]
+    comparison_sample = alloy_properties_sample_3.dropna().reset_index()
 
-comparison_sample["combined_predicted_1"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_1, prop))
-comparison_sample["elongation_predicted_1"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_1, prop)[2])
-comparison_sample["combined_predicted_2"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_2, prop))
-comparison_sample["elongation_predicted_2"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_2, prop)[2])
+    A_sample_1 = a_calc(alloy_properties_sample_1)
+    A_sample_2 = a_calc(alloy_properties_sample_2)
 
-properties_array = np.array(comparison_sample["combined_properties"].values.tolist())
-predicted_array_1 = np.array(comparison_sample["combined_predicted_1"].values.tolist())
-predicted_array_2 = np.array(comparison_sample["combined_predicted_2"].values.tolist())
+    comparison_sample["combined_predicted_1"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_1, prop))
+    comparison_sample["elongation_predicted_1"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_1, prop)[2])
+    comparison_sample["combined_predicted_2"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_2, prop))
+    comparison_sample["elongation_predicted_2"] = comparison_sample["combined_compositions"].apply(lambda prop: np.matmul(A_sample_2, prop)[2])
 
-r_squared_1 = r2_score(
-    properties_array,
-    predicted_array_1,
-    multioutput="raw_values",
-)
+    properties_array = np.array(comparison_sample["combined_properties"].values.tolist())
+    predicted_array_1 = np.array(comparison_sample["combined_predicted_1"].values.tolist())
+    predicted_array_2 = np.array(comparison_sample["combined_predicted_2"].values.tolist())
 
-r_squared_2 = r2_score(
-    properties_array,
-    predicted_array_2,
-    multioutput="raw_values",
-)
+    r_squared_1 = r2_score(
+        properties_array,
+        predicted_array_1,
+        multioutput="raw_values",
+    )
 
-print("The R^2 for sample 1 is {0}".format(r_squared_1))
-print("The R^2 for sample 2 is {0}".format(r_squared_2))
+    r_squared_2 = r2_score(
+        properties_array,
+        predicted_array_2,
+        multioutput="raw_values",
+    )
 
-difference_array_1 = properties_array - predicted_array_1
-difference_array_2 = properties_array - predicted_array_2
+    logged_r_squared_ys[i] = r_squared_1[0]
+    logged_r_squared_ys[i+1] = r_squared_2[0]
+    logged_r_squared_ts[i] = r_squared_1[1]
+    logged_r_squared_ts[i+1] = r_squared_2[1]
+    logged_r_squared_e[i] = r_squared_1[1]
+    logged_r_squared_e[i+1] = r_squared_2[1]
 
-std_yield_strength_1 = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[0] / difference_array_1.shape[0])
-std_tensile_strength_1 = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[1] / difference_array_1.shape[0])
-std_elongation_1 = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[2] / difference_array_1.shape[0])
-std_yield_strength_2 = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[0] / difference_array_2.shape[0])
-std_tensile_strength_2 = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[1] / difference_array_2.shape[0])
-std_elongation_2 = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[2] / difference_array_2.shape[0])
+    difference_array_1 = properties_array - predicted_array_1
+    difference_array_2 = properties_array - predicted_array_2
 
-print("The std for sample 1 is {0}".format([std_yield_strength_1, std_tensile_strength_1, std_elongation_1]))
-print("The std for sample 2 is {0}".format([std_yield_strength_2, std_tensile_strength_2, std_elongation_2]))
+    logged_std_ys[i] = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[0] / difference_array_1.shape[0])
+    logged_std_ys[i+1] = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[1] / difference_array_1.shape[0])
+    logged_std_ts[i] = np.sqrt(np.sum(np.square(difference_array_1), axis=0)[2] / difference_array_1.shape[0])
+    logged_std_ts[i+1] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[0] / difference_array_2.shape[0])
+    logged_std_e[i] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[1] / difference_array_2.shape[0])
+    logged_std_e[i+1] = np.sqrt(np.sum(np.square(difference_array_2), axis=0)[2] / difference_array_2.shape[0])
 
-comparison_sample["elongation_catagorised_true"] = comparison_sample["elongation"].apply(categorise_elongation)
-comparison_sample["elongation_catagorised_predicted_1"] = comparison_sample["elongation_predicted_1"].apply(categorise_elongation)
-comparison_sample["elongation_catagorised_predicted_2"] = comparison_sample["elongation_predicted_2"].apply(categorise_elongation)
+errors_df = pd.DataFrame([])
+errors_df["yield_stress_R^2"] = logged_r_squared_ys
+errors_df["tensile_stress_R^2"] = logged_r_squared_ts
+errors_df["elongation_R^2"] = logged_r_squared_e
+errors_df["yield_stress_std"] = logged_std_ys
+errors_df["tensile_stress_std"] = logged_std_ts
+errors_df["elongation_std"] = logged_std_e
 
-count_have_data = 0
-count_not_equal_1 = 0
-count_not_equal_2 = 0
+figure, axis = plt.subplots(2, 3)
 
-for i in range(0, len(comparison_sample.index)):
-    count_have_data += 1
-    if comparison_sample.loc[i, "elongation_catagorised_true"] != comparison_sample.loc[i, "elongation_catagorised_predicted_1"]:
-        count_not_equal_1 += 1
-    elif comparison_sample.loc[i, "elongation_catagorised_true"] != comparison_sample.loc[i, "elongation_catagorised_predicted_2"]:
-        count_not_equal_2 += 1
+sns.kdeplot(data=errors_df, x="yield_stress_R^2", clip=(0.0,1.0), ax=axis[0, 0])
+sns.kdeplot(data=errors_df, x="tensile_stress_R^2", clip=(0.0,1.0), ax=axis[0, 1])
+sns.kdeplot(data=errors_df, x="elongation_R^2", clip=(0.0,1.0), ax=axis[0, 2])
+sns.kdeplot(data=errors_df, x="yield_stress_std", ax=axis[1, 0])
+sns.kdeplot(data=errors_df, x="tensile_stress_std", ax=axis[1, 1])
+sns.kdeplot(data=errors_df, x="elongation_std", ax=axis[1, 2])
 
-print("The percentage of incorrect assignments of elongation for sample 1 is {0}".format(count_not_equal_1 / count_have_data))
-print("The percentage of incorrect assignments of elongation for sample 2 is {0}".format(count_not_equal_2 / count_have_data))
+plt.show()
