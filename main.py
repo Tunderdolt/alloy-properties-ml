@@ -261,6 +261,8 @@ mape_ys = calculate_mape(properties_array[:,0], predicted_array[:,0])
 mape_ts = calculate_mape(properties_array[:,1], predicted_array[:,1])
 mape_e = calculate_mape(properties_array[:,2], predicted_array[:,2])
 
+print(f"The MAPE for the entire dataset is {[mape_ys, mape_ts, mape_e]}")
+
 
 ElongationCategory = Literal["weak", "medium", "strong", "NaN"]
 
@@ -300,11 +302,11 @@ refined_alloy_properties = refined_alloy_properties.dropna()
 figure, axis = plt.subplots(2, 7)
 
 fe_e = sns.kdeplot(data=refined_alloy_properties, y="fe", x="percent_error_ys", ax=axis[0,0], fill=True, cmap="rocket_r")
-fe_e.set_ylim([60, 90])
+fe_e.set_ylim([60, 85])
 fe_e.set_xlim(left=0)
 
 c_e = sns.kdeplot(data=refined_alloy_properties, y="c", x="percent_error_ys", ax=axis[0,1], fill=True, cmap="rocket_r")
-c_e.set_ylim([0,0.5])
+c_e.set_ylim([0,0.45])
 c_e.set_xlim(left=0)
 
 mn_e = sns.kdeplot(data=refined_alloy_properties, y="mn", x="percent_error_ys", ax=axis[0,2], fill=True, cmap="rocket_r")
@@ -312,7 +314,7 @@ mn_e.set_ylim([0,1])
 mn_e.set_xlim(left=0)
 
 si_e = sns.kdeplot(data=refined_alloy_properties, y="si", x="percent_error_ys", ax=axis[0,3], fill=True, cmap="rocket_r")
-si_e.set_ylim([0,3])
+si_e.set_ylim([0,2.5])
 si_e.set_xlim(left=0)
 
 cr_e = sns.kdeplot(data=refined_alloy_properties, y="cr", x="percent_error_ys", ax=axis[0,4], fill=True, cmap="rocket_r")
@@ -328,15 +330,15 @@ mo_e.set_ylim([0,8])
 mo_e.set_xlim(left=0)
 
 v_e = sns.kdeplot(data=refined_alloy_properties, y="v", x="percent_error_ys", ax=axis[1,0], fill=True, cmap="rocket_r")
-v_e.set_ylim([0,1.5])
+v_e.set_ylim([0,1.4])
 v_e.set_xlim(left=0)
 
 n_e = sns.kdeplot(data=refined_alloy_properties, y="n", x="percent_error_ys", ax=axis[1,1], fill=True, cmap="rocket_r")
-n_e.set_ylim([0,0.075])
+n_e.set_ylim([0,0.055])
 n_e.set_xlim(left=0)
 
 nb_e = sns.kdeplot(data=refined_alloy_properties, y="nb", x="percent_error_ys", ax=axis[1,2], fill=True, cmap="rocket_r")
-nb_e.set_ylim([0,0.4])
+nb_e.set_ylim([0,0.25])
 nb_e.set_xlim(left=0)
 
 co_e = sns.kdeplot(data=refined_alloy_properties, y="co", x="percent_error_ys", ax=axis[1,3], fill=True, cmap="rocket_r")
@@ -344,75 +346,14 @@ co_e.set_ylim([0,22.5])
 co_e.set_xlim(left=0)
 
 w_e = sns.kdeplot(data=refined_alloy_properties, y="w", x="percent_error_ys", ax=axis[1,4], fill=True, cmap="rocket_r")
-w_e.set_ylim([0,3])
+w_e.set_ylim([0,2.5])
 w_e.set_xlim(left=0)
 
 al_e = sns.kdeplot(data=refined_alloy_properties, y="al", x="percent_error_ys", ax=axis[1,5], fill=True, cmap="rocket_r")
-al_e.set_ylim([0,1.5])
+al_e.set_ylim([0,1.4])
 al_e.set_xlim(left=0)
 
 ti_e = sns.kdeplot(data=refined_alloy_properties, y="ti", x="percent_error_ys", ax=axis[1,6], fill=True, cmap="rocket_r")
-ti_e.set_ylim([0,3])
-ti_e.set_xlim(left=0)
-
-plt.tight_layout(w_pad=-2.5, h_pad=-1)
-plt.show()
-
-figure, axis = plt.subplots(2, 7)
-
-fe_e = sns.kdeplot(data=refined_alloy_properties, y="fe", x="percent_error_ts", ax=axis[0,0], fill=True, cmap="rocket_r")
-fe_e.set_ylim([60, 90])
-fe_e.set_xlim(left=0)
-
-c_e = sns.kdeplot(data=refined_alloy_properties, y="c", x="percent_error_ts", ax=axis[0,1], fill=True, cmap="rocket_r")
-c_e.set_ylim([0,0.5])
-c_e.set_xlim(left=0)
-
-mn_e = sns.kdeplot(data=refined_alloy_properties, y="mn", x="percent_error_ts", ax=axis[0,2], fill=True, cmap="rocket_r")
-mn_e.set_ylim([0,1.25])
-mn_e.set_xlim(left=0)
-
-si_e = sns.kdeplot(data=refined_alloy_properties, y="si", x="percent_error_ts", ax=axis[0,3], fill=True, cmap="rocket_r")
-si_e.set_ylim([0,2.5])
-si_e.set_xlim(left=0)
-
-cr_e = sns.kdeplot(data=refined_alloy_properties, y="cr", x="percent_error_ts", ax=axis[0,4], fill=True, cmap="rocket_r")
-cr_e.set_ylim([0,22.5])
-cr_e.set_xlim(left=0)
-
-ni_e = sns.kdeplot(data=refined_alloy_properties, y="ni", x="percent_error_ts", ax=axis[0,5], fill=True, cmap="rocket_r")
-ni_e.set_ylim([0,25])
-ni_e.set_xlim(left=0)
-
-mo_e = sns.kdeplot(data=refined_alloy_properties, y="mo", x="percent_error_ts", ax=axis[0,6], fill=True, cmap="rocket_r")
-mo_e.set_ylim([0,8])
-mo_e.set_xlim(left=0)
-
-v_e = sns.kdeplot(data=refined_alloy_properties, y="v", x="percent_error_ts", ax=axis[1,0], fill=True, cmap="rocket_r")
-v_e.set_ylim([0,1.5])
-v_e.set_xlim(left=0)
-
-n_e = sns.kdeplot(data=refined_alloy_properties, y="n", x="percent_error_ts", ax=axis[1,1], fill=True, cmap="rocket_r")
-n_e.set_ylim([0,0.06])
-n_e.set_xlim(left=0)
-
-nb_e = sns.kdeplot(data=refined_alloy_properties, y="nb", x="percent_error_ts", ax=axis[1,2], fill=True, cmap="rocket_r")
-nb_e.set_ylim([0,0.35])
-nb_e.set_xlim(left=0)
-
-co_e = sns.kdeplot(data=refined_alloy_properties, y="co", x="percent_error_ts", ax=axis[1,3], fill=True, cmap="rocket_r")
-co_e.set_ylim([0,22.5])
-co_e.set_xlim(left=0)
-
-w_e = sns.kdeplot(data=refined_alloy_properties, y="w", x="percent_error_ts", ax=axis[1,4], fill=True, cmap="rocket_r")
-w_e.set_ylim([0,3])
-w_e.set_xlim(left=0)
-
-al_e = sns.kdeplot(data=refined_alloy_properties, y="al", x="percent_error_ts", ax=axis[1,5], fill=True, cmap="rocket_r")
-al_e.set_ylim([0,1.5])
-al_e.set_xlim(left=0)
-
-ti_e = sns.kdeplot(data=refined_alloy_properties, y="ti", x="percent_error_ts", ax=axis[1,6], fill=True, cmap="rocket_r")
 ti_e.set_ylim([0,2.75])
 ti_e.set_xlim(left=0)
 
@@ -421,59 +362,120 @@ plt.show()
 
 figure, axis = plt.subplots(2, 7)
 
-fe_e = sns.kdeplot(data=refined_alloy_properties, y="fe", x="percent_error_e", ax=axis[0,0], fill=True, cmap="rocket_r")
-fe_e.set_ylim([60, 90])
+fe_e = sns.kdeplot(data=refined_alloy_properties, y="fe", x="percent_error_ts", ax=axis[0,0], fill=True, cmap="copper_r")
+fe_e.set_ylim([60, 85])
+fe_e.set_xlim(left=0)
+
+c_e = sns.kdeplot(data=refined_alloy_properties, y="c", x="percent_error_ts", ax=axis[0,1], fill=True, cmap="copper_r")
+c_e.set_ylim([0,0.5])
+c_e.set_xlim(left=0)
+
+mn_e = sns.kdeplot(data=refined_alloy_properties, y="mn", x="percent_error_ts", ax=axis[0,2], fill=True, cmap="copper_r")
+mn_e.set_ylim([0,1.1])
+mn_e.set_xlim(left=0)
+
+si_e = sns.kdeplot(data=refined_alloy_properties, y="si", x="percent_error_ts", ax=axis[0,3], fill=True, cmap="copper_r")
+si_e.set_ylim([0,2.5])
+si_e.set_xlim(left=0)
+
+cr_e = sns.kdeplot(data=refined_alloy_properties, y="cr", x="percent_error_ts", ax=axis[0,4], fill=True, cmap="copper_r")
+cr_e.set_ylim([0,22.5])
+cr_e.set_xlim(left=0)
+
+ni_e = sns.kdeplot(data=refined_alloy_properties, y="ni", x="percent_error_ts", ax=axis[0,5], fill=True, cmap="copper_r")
+ni_e.set_ylim([0,25])
+ni_e.set_xlim(left=0)
+
+mo_e = sns.kdeplot(data=refined_alloy_properties, y="mo", x="percent_error_ts", ax=axis[0,6], fill=True, cmap="copper_r")
+mo_e.set_ylim([0,8])
+mo_e.set_xlim(left=0)
+
+v_e = sns.kdeplot(data=refined_alloy_properties, y="v", x="percent_error_ts", ax=axis[1,0], fill=True, cmap="copper_r")
+v_e.set_ylim([0,1.4])
+v_e.set_xlim(left=0)
+
+n_e = sns.kdeplot(data=refined_alloy_properties, y="n", x="percent_error_ts", ax=axis[1,1], fill=True, cmap="copper_r")
+n_e.set_ylim([0,0.055])
+n_e.set_xlim(left=0)
+
+nb_e = sns.kdeplot(data=refined_alloy_properties, y="nb", x="percent_error_ts", ax=axis[1,2], fill=True, cmap="copper_r")
+nb_e.set_ylim([0,0.25])
+nb_e.set_xlim(left=0)
+
+co_e = sns.kdeplot(data=refined_alloy_properties, y="co", x="percent_error_ts", ax=axis[1,3], fill=True, cmap="copper_r")
+co_e.set_ylim([0,22.5])
+co_e.set_xlim(left=0)
+
+w_e = sns.kdeplot(data=refined_alloy_properties, y="w", x="percent_error_ts", ax=axis[1,4], fill=True, cmap="copper_r")
+w_e.set_ylim([0,2.75])
+w_e.set_xlim(left=0)
+
+al_e = sns.kdeplot(data=refined_alloy_properties, y="al", x="percent_error_ts", ax=axis[1,5], fill=True, cmap="copper_r")
+al_e.set_ylim([0,1.4])
+al_e.set_xlim(left=0)
+
+ti_e = sns.kdeplot(data=refined_alloy_properties, y="ti", x="percent_error_ts", ax=axis[1,6], fill=True, cmap="copper_r")
+ti_e.set_ylim([0,2.75])
+ti_e.set_xlim(left=0)
+
+plt.tight_layout(w_pad=-2.5, h_pad=-1)
+plt.show()
+
+figure, axis = plt.subplots(2, 7)
+
+fe_e = sns.kdeplot(data=refined_alloy_properties, y="fe", x="percent_error_e", ax=axis[0,0], fill=True, cmap="cividis_r")
+fe_e.set_ylim([60, 85])
 fe_e.set_xlim([0,2.5])
 
-c_e = sns.kdeplot(data=refined_alloy_properties, y="c", x="percent_error_e", ax=axis[0,1], fill=True, cmap="rocket_r")
+c_e = sns.kdeplot(data=refined_alloy_properties, y="c", x="percent_error_e", ax=axis[0,1], fill=True, cmap="cividis_r")
 c_e.set_ylim([0,0.5])
 c_e.set_xlim([0,2.25])
 
-mn_e = sns.kdeplot(data=refined_alloy_properties, y="mn", x="percent_error_e", ax=axis[0,2], fill=True, cmap="rocket_r")
-mn_e.set_ylim([0,1.25])
+mn_e = sns.kdeplot(data=refined_alloy_properties, y="mn", x="percent_error_e", ax=axis[0,2], fill=True, cmap="cividis_r")
+mn_e.set_ylim([0,1.2])
 mn_e.set_xlim([0,2.5])
 
-si_e = sns.kdeplot(data=refined_alloy_properties, y="si", x="percent_error_e", ax=axis[0,3], fill=True, cmap="rocket_r")
+si_e = sns.kdeplot(data=refined_alloy_properties, y="si", x="percent_error_e", ax=axis[0,3], fill=True, cmap="cividis_r")
 si_e.set_ylim([0,2.5])
 si_e.set_xlim([0,2.5])
 
-cr_e = sns.kdeplot(data=refined_alloy_properties, y="cr", x="percent_error_e", ax=axis[0,4], fill=True, cmap="rocket_r")
+cr_e = sns.kdeplot(data=refined_alloy_properties, y="cr", x="percent_error_e", ax=axis[0,4], fill=True, cmap="cividis_r")
 cr_e.set_ylim([0,22.5])
 cr_e.set_xlim([0,2.25])
 
-ni_e = sns.kdeplot(data=refined_alloy_properties, y="ni", x="percent_error_e", ax=axis[0,5], fill=True, cmap="rocket_r")
+ni_e = sns.kdeplot(data=refined_alloy_properties, y="ni", x="percent_error_e", ax=axis[0,5], fill=True, cmap="cividis_r")
 ni_e.set_ylim([0,25])
 ni_e.set_xlim([0,2.5])
 
-mo_e = sns.kdeplot(data=refined_alloy_properties, y="mo", x="percent_error_e", ax=axis[0,6], fill=True, cmap="rocket_r")
+mo_e = sns.kdeplot(data=refined_alloy_properties, y="mo", x="percent_error_e", ax=axis[0,6], fill=True, cmap="cividis_r")
 mo_e.set_ylim([0,8])
 mo_e.set_xlim([0,3])
 
-v_e = sns.kdeplot(data=refined_alloy_properties, y="v", x="percent_error_e", ax=axis[1,0], fill=True, cmap="rocket_r")
-v_e.set_ylim([0,2.5])
+v_e = sns.kdeplot(data=refined_alloy_properties, y="v", x="percent_error_e", ax=axis[1,0], fill=True, cmap="cividis_r")
+v_e.set_ylim([0,2.25])
 v_e.set_xlim([0,2.5])
 
-n_e = sns.kdeplot(data=refined_alloy_properties, y="n", x="percent_error_e", ax=axis[1,1], fill=True, cmap="rocket_r")
-n_e.set_ylim([0,0.075])
+n_e = sns.kdeplot(data=refined_alloy_properties, y="n", x="percent_error_e", ax=axis[1,1], fill=True, cmap="cividis_r")
+n_e.set_ylim([0,0.06])
 n_e.set_xlim([0,2.5])
 
-nb_e = sns.kdeplot(data=refined_alloy_properties, y="nb", x="percent_error_e", ax=axis[1,2], fill=True, cmap="rocket_r")
-nb_e.set_ylim([0,0.4])
-nb_e.set_xlim([0,2])
+nb_e = sns.kdeplot(data=refined_alloy_properties, y="nb", x="percent_error_e", ax=axis[1,2], fill=True, cmap="cividis_r")
+nb_e.set_ylim([0,0.36])
+nb_e.set_xlim([0,2.5])
 
-co_e = sns.kdeplot(data=refined_alloy_properties, y="co", x="percent_error_e", ax=axis[1,3], fill=True, cmap="rocket_r")
+co_e = sns.kdeplot(data=refined_alloy_properties, y="co", x="percent_error_e", ax=axis[1,3], fill=True, cmap="cividis_r")
 co_e.set_ylim([0,22.5])
 co_e.set_xlim([0,2.5])
 
-w_e = sns.kdeplot(data=refined_alloy_properties, y="w", x="percent_error_e", ax=axis[1,4], fill=True, cmap="rocket_r")
-w_e.set_ylim([0,2.5])
+w_e = sns.kdeplot(data=refined_alloy_properties, y="w", x="percent_error_e", ax=axis[1,4], fill=True, cmap="cividis_r")
+w_e.set_ylim([0,2.25])
 w_e.set_xlim([0,2.5])
 
-al_e = sns.kdeplot(data=refined_alloy_properties, y="al", x="percent_error_e", ax=axis[1,5], fill=True, cmap="rocket_r")
-al_e.set_ylim([0,1.5])
+al_e = sns.kdeplot(data=refined_alloy_properties, y="al", x="percent_error_e", ax=axis[1,5], fill=True, cmap="cividis_r")
+al_e.set_ylim([0,1.4])
 al_e.set_xlim([0,2.5])
 
-ti_e = sns.kdeplot(data=refined_alloy_properties, y="ti", x="percent_error_e", ax=axis[1,6], fill=True, cmap="rocket_r")
+ti_e = sns.kdeplot(data=refined_alloy_properties, y="ti", x="percent_error_e", ax=axis[1,6], fill=True, cmap="cividis_r")
 ti_e.set_ylim([0,2.5])
 ti_e.set_xlim([0,2.5])
 
