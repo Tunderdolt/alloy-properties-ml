@@ -475,32 +475,31 @@ plt.show()
 #
 
 def cross_validation(n, k, data: pd.DataFrame):
-    logged_std_ys = np.zeros(n)
-    logged_std_ts = np.zeros(n)
-    logged_std_e = np.zeros(n)
-    logged_r_squared_ys = np.zeros(n)
-    logged_r_squared_ts = np.zeros(n)
-    logged_r_squared_e = np.zeros(n)
-    logged_mape_ys = np.zeros(n)
-    logged_mape_ts = np.zeros(n)
-    logged_mape_e = np.zeros(n)
+    loop_range = n * k
+    logged_std_ys = np.zeros(loop_range)
+    logged_std_ts = np.zeros(loop_range)
+    logged_std_e = np.zeros(loop_range)
+    logged_r_squared_ys = np.zeros(loop_range)
+    logged_r_squared_ts = np.zeros(loop_range)
+    logged_r_squared_e = np.zeros(loop_range)
+    logged_mape_ys = np.zeros(loop_range)
+    logged_mape_ts = np.zeros(loop_range)
+    logged_mape_e = np.zeros(loop_range)
 
     data = data.dropna()
 
-    for i in range(0, n, k - 1):
+    for i in range(0, loop_range, k - 1):
         samples: list[pd.DataFrame] = DataframeWriter.data_shuffler(data, k)
         control_sample: pd.DataFrame = samples[0]
         properties_array = np.array(control_sample["combined_properties"].values.tolist())
 
         for j in range(0, k - 1):
-            if i + j >= n:
-                continue
-
-            control_sample[f"combined_predicted_{j + 1}"] = (
-                control_sample["combined_compositions"].apply(lambda prop: np.matmul(a_calc(samples[j + 1]), prop))
+            predicted_array = np.array(
+                control_sample["combined_compositions"]
+                .apply(lambda prop: np.matmul(a_calc(samples[j + 1]), prop))
+                .values
+                .tolist()
             )
-
-            predicted_array = np.array(control_sample[f"combined_predicted_{j + 1}"].values.tolist())
 
             r_squared =  r2_score(
                 properties_array,
@@ -522,7 +521,7 @@ def cross_validation(n, k, data: pd.DataFrame):
             logged_mape_ts[i + j] = calculate_mape(properties_array[:,1], predicted_array[:,1])
             logged_mape_e[i + j] = calculate_mape(properties_array[:,2], predicted_array[:,2])
 
-    errors_df = pd.DataFrame([])
+    errors_df = pd.DataFrame()
     errors_df["yield_stress_R^2"] = logged_r_squared_ys
     errors_df["tensile_stress_R^2"] = logged_r_squared_ts
     errors_df["elongation_R^2"] = logged_r_squared_e
@@ -535,7 +534,7 @@ def cross_validation(n, k, data: pd.DataFrame):
 
     return errors_df
 
-errors_df = cross_validation(200, 3, test_alloy_properties)
+errors_df = cross_validation(100, 3, test_alloy_properties)
 
 figure, axis = plt.subplots(3, 3)
 
