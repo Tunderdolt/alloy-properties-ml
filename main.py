@@ -7,7 +7,6 @@ import sklearn.linear_model
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
-pd.options.mode.chained_assignment = None
 
 Element = Literal["fe", "c", "mn", "si", "cr", "ni", "mo", "v", "n", "nb", "co", "w", "al", "ti"]
 Property = Literal["yield_strength", "tensile_strength", "elongation"]
@@ -113,7 +112,7 @@ class DataframeWriter:
         ti_calc = []
 
         for i in range(0, len(self.data.index)):
-            weight_dict: dict = self.atom_to_weight_percent(self.data['formula'][i])
+            weight_dict: dict = (self.atom_to_weight_percent(self.data['formula'][i]))
             fe_calc.append(weight_dict.get('fe', 0))
             c_calc.append(weight_dict.get('c', 0))
             mn_calc.append(weight_dict.get('mn', 0))
@@ -153,9 +152,19 @@ class DataframeWriter:
         shuffled_fe_dict: dict[str, pd.DataFrame] = {}
 
         for i in range(0, n-1):
-            shuffled_fe_dict[f"shuffled_fe_data{i+1}"] = sorted_data.iloc[i*length_of_segment:(i+1)*length_of_segment].sample(frac=1).reset_index(drop=True)
+            shuffled_fe_dict[f"shuffled_fe_data{i+1}"] = (
+                sorted_data
+                .iloc[i*length_of_segment:(i+1)*length_of_segment]
+                .sample(frac=1)
+                .reset_index(drop=True)
+            )
 
-        shuffled_fe_dict[f"shuffled_fe_data{n}"] = sorted_data.iloc[(n-1)*length_of_segment:len(data.index)].sample(frac=1).reset_index(drop=True)
+        shuffled_fe_dict[f"shuffled_fe_data{n}"] = (
+            sorted_data
+            .iloc[(n-1)*length_of_segment:len(data.index)]
+            .sample(frac=1)
+            .reset_index(drop=True)
+        )
 
         fe_sample_data: list[pd.DataFrame] = []
         partial_sample_dict: dict[str, pd.DataFrame] = {}
@@ -163,9 +172,16 @@ class DataframeWriter:
         for i in range(1, n):
             sample_df = pd.DataFrame([])
             for j in range(1, n+1):
-                partial_sample_dict[f"partial_sample{j}"] = shuffled_fe_dict[f"shuffled_fe_data{j}"].iloc[0:int(round(length_of_segment / n))]
+                partial_sample_dict[f"partial_sample{j}"] = (
+                    shuffled_fe_dict[f"shuffled_fe_data{j}"]
+                    .iloc[0:int(round(length_of_segment / n))]
+                )
                 sample_df = pd.concat([sample_df, partial_sample_dict[f"partial_sample{j}"]])
-                shuffled_fe_dict[f"shuffled_fe_data{j}"] = shuffled_fe_dict[f"shuffled_fe_data{j}"].reset_index(drop=True).drop(np.arange(0, int(round(length_of_segment / n))))
+                shuffled_fe_dict[f"shuffled_fe_data{j}"] = (
+                    shuffled_fe_dict[f"shuffled_fe_data{j}"]
+                    .reset_index(drop=True)
+                    .drop(np.arange(0, int(round(length_of_segment / n))))
+                )
             
             fe_sample_data.append(sample_df.reset_index(drop=True))
         
@@ -195,7 +211,9 @@ def calculate_mape(actual, predicted) -> float:
     return np.mean(np.abs(( actual - predicted) / actual), axis=0) * 100
 
 def calculate_std(actual: np.ndarray, predicted: np.ndarray, mean: float = 0):
-    return np.sqrt(np.sum(np.square(actual - predicted - mean), axis=0) / (actual - predicted).shape[0])
+    return np.sqrt(np.sum(
+        np.square(actual - predicted - mean), axis=0) / (actual - predicted).shape[0]
+    )
 
 def categorise_elongation(elongation: float) -> ElongationCategory:
     if np.isnan(elongation):
@@ -207,7 +225,7 @@ def categorise_elongation(elongation: float) -> ElongationCategory:
     return "medium"
         
 alloy_properties = pd.read_csv(r"C:\Users\sambi\Programming\alloy-properties-ml\database_steel_properties.csv", skiprows=1)
-alloy_properties['formula'] = alloy_properties['formula'].apply(lambda value: value.lower())
+alloy_properties['formula'] = (alloy_properties['formula'].apply(lambda value: value.lower()))
 
 dataframe_writer = DataframeWriter(alloy_properties)
 
@@ -215,31 +233,60 @@ alloy_properties = dataframe_writer.data_fill()
 
 refined_alloy_properties = pd.DataFrame(
     {
-        element: alloy_properties[element].combine_first(alloy_properties[f"{element}_calc"])
+        element: alloy_properties[element]
+        .combine_first(alloy_properties[f"{element}_calc"])
         for element in ELEMENTS if element != "fe"
     }
 )
 refined_alloy_properties["fe"] = alloy_properties["fe_calc"]
-refined_alloy_properties["combined_compositions"] = refined_alloy_properties[[element for element in ELEMENTS]].values.tolist()
+refined_alloy_properties["combined_compositions"] = (
+    refined_alloy_properties[[element for element in ELEMENTS]]
+    .values
+    .tolist()
+)
 refined_alloy_properties["yield_strength"] = alloy_properties["yield strength"]
 refined_alloy_properties["tensile_strength"] = alloy_properties["tensile strength"]
 refined_alloy_properties["elongation"] = alloy_properties["elongation"]
-refined_alloy_properties["combined_properties"] = refined_alloy_properties[[prop for prop in PROPERTIES]].values.tolist()
-refined_alloy_properties["combined_properties"] = refined_alloy_properties["combined_properties"].apply(lambda prop: np.array(prop))
+refined_alloy_properties["combined_properties"] = (
+    refined_alloy_properties[[prop for prop in PROPERTIES]]
+    .values
+    .tolist()
+)
+refined_alloy_properties["combined_properties"] = (
+    refined_alloy_properties["combined_properties"]
+    .apply(lambda prop: np.array(prop))
+)
 
 test_alloy_properties = refined_alloy_properties
 
 A_learned = a_calc(refined_alloy_properties)
 
-composition_vectors = refined_alloy_properties[[element for element in ELEMENT_WEIGHT.keys()]].to_numpy()
+composition_vectors = (
+    refined_alloy_properties[[element for element in ELEMENT_WEIGHT.keys()]]
+    .to_numpy()
+)
 
-refined_alloy_properties["elongation_predicted"] = refined_alloy_properties["combined_compositions"].apply(lambda prop: np.matmul(A_learned, prop)[2])
-refined_alloy_properties["combined_predicted"] = refined_alloy_properties["combined_compositions"].apply(lambda prop: np.matmul(A_learned, prop))
+refined_alloy_properties["elongation_predicted"] = (
+    refined_alloy_properties["combined_compositions"]
+    .apply(lambda prop: np.matmul(A_learned, prop)[2])
+)
+refined_alloy_properties["combined_predicted"] = (
+    refined_alloy_properties["combined_compositions"]
+    .apply(lambda prop: np.matmul(A_learned, prop))
+)
 
 reduced_alloy_properties = refined_alloy_properties.dropna()
 
-properties_array = np.array(reduced_alloy_properties["combined_properties"].values.tolist())
-predicted_array = np.array(reduced_alloy_properties["combined_predicted"].values.tolist())
+properties_array = np.array(
+    reduced_alloy_properties["combined_properties"]
+    .values
+    .tolist()
+)
+predicted_array = np.array(
+    reduced_alloy_properties["combined_predicted"]
+    .values
+    .tolist()
+)
 
 r_squared = list(r2_score(
     properties_array,
@@ -247,18 +294,18 @@ r_squared = list(r2_score(
     multioutput="raw_values",
 ))
 
-difference_array = properties_array - predicted_array
+std_combined= calculate_std(properties_array, predicted_array)
 
-std_yield_strength = np.sqrt(np.sum(np.square(difference_array), axis=0)[0] / difference_array.shape[0])
-std_tensile_strength = np.sqrt(np.sum(np.square(difference_array), axis=0)[1] / difference_array.shape[0])
-std_elongation = np.sqrt(np.sum(np.square(difference_array), axis=0)[2] / difference_array.shape[0])
+mape_combined = calculate_mape(properties_array, predicted_array)
 
-mape_ys = calculate_mape(properties_array[:,0], predicted_array[:,0])
-mape_ts = calculate_mape(properties_array[:,1], predicted_array[:,1])
-mape_e = calculate_mape(properties_array[:,2], predicted_array[:,2])
-
-refined_alloy_properties["elongation_catagorised_true"] = refined_alloy_properties["elongation"].apply(categorise_elongation)
-refined_alloy_properties["elongation_catagorised_predicted"] = refined_alloy_properties["elongation_predicted"].apply(categorise_elongation)
+refined_alloy_properties["elongation_catagorised_true"] = (
+    refined_alloy_properties["elongation"]
+    .apply(categorise_elongation)
+)
+refined_alloy_properties["elongation_catagorised_predicted"] = (
+    refined_alloy_properties["elongation_predicted"]
+    .apply(categorise_elongation)
+)
 
 count_have_data = 0 
 count_not_equal = 0
@@ -267,202 +314,150 @@ for i in range(0, len(refined_alloy_properties.index)):
     if refined_alloy_properties.loc[i, "elongation_catagorised_true"] == "NaN":
         continue
     count_have_data += 1
-    if refined_alloy_properties.loc[i, "elongation_catagorised_true"] != refined_alloy_properties.loc[i, "elongation_catagorised_predicted"]:
+    if (refined_alloy_properties.loc[i, "elongation_catagorised_true"] != 
+        refined_alloy_properties.loc[i, "elongation_catagorised_predicted"]
+    ):
         count_not_equal +=1
 
 print(f"The R^2 for the entire dataset is {r_squared}")
-print(f"The std for the entire dataset is {[std_yield_strength, std_tensile_strength, std_elongation]}")
-print(f"The MAPE for the entire dataset is {[mape_ys, mape_ts, mape_e]}")
+print(f"The std for the entire dataset is {std_combined}")
+print(f"The MAPE for the entire dataset is {mape_combined}")
 print(f"The percentage of incorrect assignments of elongation is {count_not_equal / count_have_data}")
 
 #
 #The following is to see if there is a correlation between error and and element composition
 #
 
-refined_alloy_properties["percent_error_ys"] = abs((refined_alloy_properties["combined_properties"].apply(lambda prop: prop[0]) - refined_alloy_properties["combined_predicted"]).apply(lambda prop: prop[0]) / refined_alloy_properties["combined_properties"].apply(lambda prop: prop[0]))
-refined_alloy_properties["percent_error_ts"] = abs((refined_alloy_properties["combined_properties"].apply(lambda prop: prop[1]) - refined_alloy_properties["combined_predicted"]).apply(lambda prop: prop[1]) / refined_alloy_properties["combined_properties"].apply(lambda prop: prop[1]))
-refined_alloy_properties["percent_error_e"] = abs((refined_alloy_properties["combined_properties"].apply(lambda prop: prop[2]) - refined_alloy_properties["combined_predicted"].apply(lambda prop: prop[2])) / refined_alloy_properties["combined_properties"].apply(lambda prop: prop[2]))
+refined_alloy_properties["percent_error_combined"] = abs(
+    (refined_alloy_properties["combined_properties"] - 
+    refined_alloy_properties["combined_predicted"]) / 
+    refined_alloy_properties["combined_properties"]
+)
+
+refined_alloy_properties["percent_error_ys"] = (
+    refined_alloy_properties["percent_error_combined"]
+    .apply(lambda prop: prop[0])
+)
+refined_alloy_properties["percent_error_ts"] = (
+    refined_alloy_properties["percent_error_combined"]
+    .apply(lambda prop: prop[1])
+)
+refined_alloy_properties["percent_error_e"] = (
+    refined_alloy_properties["percent_error_combined"]
+    .apply(lambda prop: prop[2])
+)
 refined_alloy_properties = refined_alloy_properties.dropna()
 
 figure, axis = plt.subplots(2, 7)
 
-fe_e = sns.kdeplot(data=refined_alloy_properties, y="fe", x="percent_error_ys", ax=axis[0,0], fill=True, cmap="rocket_r")
-fe_e.set_ylim([60, 85])
-fe_e.set_xlim(left=0)
+plots: dict[str, plt.Axes] = {}
+k = 0
 
-c_e = sns.kdeplot(data=refined_alloy_properties, y="c", x="percent_error_ys", ax=axis[0,1], fill=True, cmap="rocket_r")
-c_e.set_ylim([0,0.45])
-c_e.set_xlim(left=0)
+for i in range(0, len(ELEMENTS)):
+    j = i
+    if j >= int(len(ELEMENTS) / 2):
+        k = 1
+        j = i - int(len(ELEMENTS) / 2)
+    plots[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+        data=refined_alloy_properties, 
+        y=f"{ELEMENTS[i]}", 
+        x="percent_error_ys", 
+        ax=axis[k,j], 
+        fill=True, 
+        cmap="rocket_r",
+    )
+    plots[f"{ELEMENTS[i]}_err"].set_xlim(left=0)
+    plots[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
 
-mn_e = sns.kdeplot(data=refined_alloy_properties, y="mn", x="percent_error_ys", ax=axis[0,2], fill=True, cmap="rocket_r")
-mn_e.set_ylim([0,1])
-mn_e.set_xlim(left=0)
-
-si_e = sns.kdeplot(data=refined_alloy_properties, y="si", x="percent_error_ys", ax=axis[0,3], fill=True, cmap="rocket_r")
-si_e.set_ylim([0,2.5])
-si_e.set_xlim(left=0)
-
-cr_e = sns.kdeplot(data=refined_alloy_properties, y="cr", x="percent_error_ys", ax=axis[0,4], fill=True, cmap="rocket_r")
-cr_e.set_ylim([0,22.5])
-cr_e.set_xlim(left=0)
-
-ni_e = sns.kdeplot(data=refined_alloy_properties, y="ni", x="percent_error_ys", ax=axis[0,5], fill=True, cmap="rocket_r")
-ni_e.set_ylim([0,25])
-ni_e.set_xlim(left=0)
-
-mo_e = sns.kdeplot(data=refined_alloy_properties, y="mo", x="percent_error_ys", ax=axis[0,6], fill=True, cmap="rocket_r")
-mo_e.set_ylim([0,8])
-mo_e.set_xlim(left=0)
-
-v_e = sns.kdeplot(data=refined_alloy_properties, y="v", x="percent_error_ys", ax=axis[1,0], fill=True, cmap="rocket_r")
-v_e.set_ylim([0,1.4])
-v_e.set_xlim(left=0)
-
-n_e = sns.kdeplot(data=refined_alloy_properties, y="n", x="percent_error_ys", ax=axis[1,1], fill=True, cmap="rocket_r")
-n_e.set_ylim([0,0.055])
-n_e.set_xlim(left=0)
-
-nb_e = sns.kdeplot(data=refined_alloy_properties, y="nb", x="percent_error_ys", ax=axis[1,2], fill=True, cmap="rocket_r")
-nb_e.set_ylim([0,0.25])
-nb_e.set_xlim(left=0)
-
-co_e = sns.kdeplot(data=refined_alloy_properties, y="co", x="percent_error_ys", ax=axis[1,3], fill=True, cmap="rocket_r")
-co_e.set_ylim([0,22.5])
-co_e.set_xlim(left=0)
-
-w_e = sns.kdeplot(data=refined_alloy_properties, y="w", x="percent_error_ys", ax=axis[1,4], fill=True, cmap="rocket_r")
-w_e.set_ylim([0,2.5])
-w_e.set_xlim(left=0)
-
-al_e = sns.kdeplot(data=refined_alloy_properties, y="al", x="percent_error_ys", ax=axis[1,5], fill=True, cmap="rocket_r")
-al_e.set_ylim([0,1.4])
-al_e.set_xlim(left=0)
-
-ti_e = sns.kdeplot(data=refined_alloy_properties, y="ti", x="percent_error_ys", ax=axis[1,6], fill=True, cmap="rocket_r")
-ti_e.set_ylim([0,2.75])
-ti_e.set_xlim(left=0)
+plots["fe_err"].set_ylim([60,85])
+plots["c_err"].set_ylim(top=0.45)
+plots["mn_err"].set_ylim(top=1)
+plots["si_err"].set_ylim(top=2.5)
+plots["cr_err"].set_ylim(top=22.5)
+plots["ni_err"].set_ylim(top=25)
+plots["mo_err"].set_ylim(top=8)
+plots["v_err"].set_ylim(top=1.4)
+plots["n_err"].set_ylim(top=0.055)
+plots["nb_err"].set_ylim(top=0.25)
+plots["co_err"].set_ylim(top=22.5)
+plots["w_err"].set_ylim(top=2.5)
+plots["al_err"].set_ylim(top=1.4)
+plots["ti_err"].set_ylim(top=2.75)
 
 plt.tight_layout(w_pad=-2.5, h_pad=-1)
 plt.show()
 
 figure, axis = plt.subplots(2, 7)
+k = 0
 
-fe_e = sns.kdeplot(data=refined_alloy_properties, y="fe", x="percent_error_ts", ax=axis[0,0], fill=True, cmap="copper_r")
-fe_e.set_ylim([60, 85])
-fe_e.set_xlim(left=0)
+for i in range(0, len(ELEMENTS)):
+    j = i
+    if j >= int(len(ELEMENTS) / 2):
+        k = 1
+        j = i - int(len(ELEMENTS) / 2)
+    plots[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+        data=refined_alloy_properties, 
+        y=f"{ELEMENTS[i]}", 
+        x="percent_error_ts", 
+        ax=axis[k,j], 
+        fill=True, 
+        cmap="rocket_r",
+    )
+    plots[f"{ELEMENTS[i]}_err"].set_xlim(left=0)
+    plots[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
 
-c_e = sns.kdeplot(data=refined_alloy_properties, y="c", x="percent_error_ts", ax=axis[0,1], fill=True, cmap="copper_r")
-c_e.set_ylim([0,0.5])
-c_e.set_xlim(left=0)
 
-mn_e = sns.kdeplot(data=refined_alloy_properties, y="mn", x="percent_error_ts", ax=axis[0,2], fill=True, cmap="copper_r")
-mn_e.set_ylim([0,1.1])
-mn_e.set_xlim(left=0)
-
-si_e = sns.kdeplot(data=refined_alloy_properties, y="si", x="percent_error_ts", ax=axis[0,3], fill=True, cmap="copper_r")
-si_e.set_ylim([0,2.5])
-si_e.set_xlim(left=0)
-
-cr_e = sns.kdeplot(data=refined_alloy_properties, y="cr", x="percent_error_ts", ax=axis[0,4], fill=True, cmap="copper_r")
-cr_e.set_ylim([0,22.5])
-cr_e.set_xlim(left=0)
-
-ni_e = sns.kdeplot(data=refined_alloy_properties, y="ni", x="percent_error_ts", ax=axis[0,5], fill=True, cmap="copper_r")
-ni_e.set_ylim([0,25])
-ni_e.set_xlim(left=0)
-
-mo_e = sns.kdeplot(data=refined_alloy_properties, y="mo", x="percent_error_ts", ax=axis[0,6], fill=True, cmap="copper_r")
-mo_e.set_ylim([0,8])
-mo_e.set_xlim(left=0)
-
-v_e = sns.kdeplot(data=refined_alloy_properties, y="v", x="percent_error_ts", ax=axis[1,0], fill=True, cmap="copper_r")
-v_e.set_ylim([0,1.4])
-v_e.set_xlim(left=0)
-
-n_e = sns.kdeplot(data=refined_alloy_properties, y="n", x="percent_error_ts", ax=axis[1,1], fill=True, cmap="copper_r")
-n_e.set_ylim([0,0.055])
-n_e.set_xlim(left=0)
-
-nb_e = sns.kdeplot(data=refined_alloy_properties, y="nb", x="percent_error_ts", ax=axis[1,2], fill=True, cmap="copper_r")
-nb_e.set_ylim([0,0.25])
-nb_e.set_xlim(left=0)
-
-co_e = sns.kdeplot(data=refined_alloy_properties, y="co", x="percent_error_ts", ax=axis[1,3], fill=True, cmap="copper_r")
-co_e.set_ylim([0,22.5])
-co_e.set_xlim(left=0)
-
-w_e = sns.kdeplot(data=refined_alloy_properties, y="w", x="percent_error_ts", ax=axis[1,4], fill=True, cmap="copper_r")
-w_e.set_ylim([0,2.75])
-w_e.set_xlim(left=0)
-
-al_e = sns.kdeplot(data=refined_alloy_properties, y="al", x="percent_error_ts", ax=axis[1,5], fill=True, cmap="copper_r")
-al_e.set_ylim([0,1.4])
-al_e.set_xlim(left=0)
-
-ti_e = sns.kdeplot(data=refined_alloy_properties, y="ti", x="percent_error_ts", ax=axis[1,6], fill=True, cmap="copper_r")
-ti_e.set_ylim([0,2.75])
-ti_e.set_xlim(left=0)
+plots["fe_err"].set_ylim([60, 85])
+plots["c_err"].set_ylim(top=0.5)
+plots["mn_err"].set_ylim(top=1.1)
+plots["si_err"].set_ylim(top=2.5)
+plots["cr_err"].set_ylim(top=22.5)
+plots["ni_err"].set_ylim(top=25)
+plots["mo_err"].set_ylim(top=8)
+plots["v_err"].set_ylim(top=1.4)
+plots["n_err"].set_ylim(top=0.055)
+plots["nb_err"].set_ylim(top=0.25)
+plots["co_err"].set_ylim(top=22.5)
+plots["w_err"].set_ylim(top=2.75)
+plots["al_err"].set_ylim(top=1.4)
+plots["ti_err"].set_ylim(top=2.75)
 
 plt.tight_layout(w_pad=-2.5, h_pad=-1)
 plt.show()
 
 figure, axis = plt.subplots(2, 7)
+k = 0
 
-fe_e = sns.kdeplot(data=refined_alloy_properties, y="fe", x="percent_error_e", ax=axis[0,0], fill=True, cmap="cividis_r")
-fe_e.set_ylim([60, 85])
-fe_e.set_xlim([0,2.5])
+for i in range(0, len(ELEMENTS)):
+    j = i
+    if j >= int(len(ELEMENTS) / 2):
+        k = 1
+        j = i - int(len(ELEMENTS) / 2)
+    plots[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+        data=refined_alloy_properties, 
+        y=f"{ELEMENTS[i]}", 
+        x="percent_error_e", 
+        ax=axis[k,j], 
+        fill=True, 
+        cmap="cividis_r",
+    )
+    plots[f"{ELEMENTS[i]}_err"].set_xlim([0, 2.5])
+    plots[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
 
-c_e = sns.kdeplot(data=refined_alloy_properties, y="c", x="percent_error_e", ax=axis[0,1], fill=True, cmap="cividis_r")
-c_e.set_ylim([0,0.5])
-c_e.set_xlim([0,2.25])
-
-mn_e = sns.kdeplot(data=refined_alloy_properties, y="mn", x="percent_error_e", ax=axis[0,2], fill=True, cmap="cividis_r")
-mn_e.set_ylim([0,1.2])
-mn_e.set_xlim([0,2.5])
-
-si_e = sns.kdeplot(data=refined_alloy_properties, y="si", x="percent_error_e", ax=axis[0,3], fill=True, cmap="cividis_r")
-si_e.set_ylim([0,2.5])
-si_e.set_xlim([0,2.5])
-
-cr_e = sns.kdeplot(data=refined_alloy_properties, y="cr", x="percent_error_e", ax=axis[0,4], fill=True, cmap="cividis_r")
-cr_e.set_ylim([0,22.5])
-cr_e.set_xlim([0,2.25])
-
-ni_e = sns.kdeplot(data=refined_alloy_properties, y="ni", x="percent_error_e", ax=axis[0,5], fill=True, cmap="cividis_r")
-ni_e.set_ylim([0,25])
-ni_e.set_xlim([0,2.5])
-
-mo_e = sns.kdeplot(data=refined_alloy_properties, y="mo", x="percent_error_e", ax=axis[0,6], fill=True, cmap="cividis_r")
-mo_e.set_ylim([0,8])
-mo_e.set_xlim([0,3])
-
-v_e = sns.kdeplot(data=refined_alloy_properties, y="v", x="percent_error_e", ax=axis[1,0], fill=True, cmap="cividis_r")
-v_e.set_ylim([0,2.25])
-v_e.set_xlim([0,2.5])
-
-n_e = sns.kdeplot(data=refined_alloy_properties, y="n", x="percent_error_e", ax=axis[1,1], fill=True, cmap="cividis_r")
-n_e.set_ylim([0,0.06])
-n_e.set_xlim([0,2.5])
-
-nb_e = sns.kdeplot(data=refined_alloy_properties, y="nb", x="percent_error_e", ax=axis[1,2], fill=True, cmap="cividis_r")
-nb_e.set_ylim([0,0.36])
-nb_e.set_xlim([0,2.5])
-
-co_e = sns.kdeplot(data=refined_alloy_properties, y="co", x="percent_error_e", ax=axis[1,3], fill=True, cmap="cividis_r")
-co_e.set_ylim([0,22.5])
-co_e.set_xlim([0,2.5])
-
-w_e = sns.kdeplot(data=refined_alloy_properties, y="w", x="percent_error_e", ax=axis[1,4], fill=True, cmap="cividis_r")
-w_e.set_ylim([0,2.25])
-w_e.set_xlim([0,2.5])
-
-al_e = sns.kdeplot(data=refined_alloy_properties, y="al", x="percent_error_e", ax=axis[1,5], fill=True, cmap="cividis_r")
-al_e.set_ylim([0,1.4])
-al_e.set_xlim([0,2.5])
-
-ti_e = sns.kdeplot(data=refined_alloy_properties, y="ti", x="percent_error_e", ax=axis[1,6], fill=True, cmap="cividis_r")
-ti_e.set_ylim([0,2.5])
-ti_e.set_xlim([0,2.5])
+plots["fe_err"].set_ylim([60, 85])
+plots["c_err"].set_ylim(top=0.5)
+plots["mn_err"].set_ylim(top=1.2)
+plots["si_err"].set_ylim(top=2.5)
+plots["cr_err"].set_ylim(top=22.5)
+plots["ni_err"].set_ylim(top=25)
+plots["mo_err"].set_ylim(top=8)
+plots["v_err"].set_ylim(top=2.25)
+plots["n_err"].set_ylim(top=0.06)
+plots["nb_err"].set_ylim(top=0.36)
+plots["co_err"].set_ylim(top=22.5)
+plots["w_err"].set_ylim(top=2.25)
+plots["al_err"].set_ylim(top=1.4)
+plots["ti_err"].set_ylim(top=2.5)
 
 plt.tight_layout(w_pad=-3.5, h_pad=-1)
 plt.show()
@@ -532,3 +527,8 @@ sns.kdeplot(data=errors_df, x="tensile_stress_mape", clip=(0.0,100.0), ax=axis[2
 sns.kdeplot(data=errors_df, x="elongation_mape", clip=(0.0,100.0), ax=axis[2, 2])
 
 plt.show()
+
+#
+#The following is an algorithm to find an optimal minimum composition of Co and Ni for best mechanical properties
+#and Ni content for best mechanical properties
+#
