@@ -192,13 +192,10 @@ def a_calc(data: pd.DataFrame):
     return A
 
 def calculate_mape(actual, predicted) -> float:  
-    if not all([isinstance(actual, np.ndarray), 
-                isinstance(predicted, np.ndarray)]): 
-        actual, predicted = np.array(actual),  
-        np.array(predicted) 
+    return np.mean(np.abs(( actual - predicted) / actual), axis=0) * 100
 
-    return round(np.mean(np.abs(( 
-      actual - predicted) / actual)) * 100, 2)
+def calculate_std(actual: np.ndarray, predicted: np.ndarray, mean: float = 0):
+    return np.sqrt(np.sum(np.square(actual - predicted - mean), axis=0) / (actual - predicted).shape[0])
 
 def categorise_elongation(elongation: float) -> ElongationCategory:
     if np.isnan(elongation):
@@ -476,27 +473,21 @@ plt.show()
 
 def cross_validation(n, k, data: pd.DataFrame):
     loop_range = n * k
-    logged_std_ys = np.zeros(loop_range)
-    logged_std_ts = np.zeros(loop_range)
-    logged_std_e = np.zeros(loop_range)
-    logged_r_squared_ys = np.zeros(loop_range)
-    logged_r_squared_ts = np.zeros(loop_range)
-    logged_r_squared_e = np.zeros(loop_range)
-    logged_mape_ys = np.zeros(loop_range)
-    logged_mape_ts = np.zeros(loop_range)
-    logged_mape_e = np.zeros(loop_range)
-
-    data = data.dropna()
+    logged_std = np.zeros([3, loop_range])
+    logged_r_squared = np.zeros([3, loop_range])
+    logged_mape = np.zeros([3, loop_range])
 
     for i in range(0, loop_range, k - 1):
         samples: list[pd.DataFrame] = DataframeWriter.data_shuffler(data, k)
-        control_sample: pd.DataFrame = samples[0]
+        control_sample: pd.DataFrame = samples[0].dropna()
         properties_array = np.array(control_sample["combined_properties"].values.tolist())
 
         for j in range(0, k - 1):
+            A_learned = a_calc(samples[j+1])
+
             predicted_array = np.array(
                 control_sample["combined_compositions"]
-                .apply(lambda prop: np.matmul(a_calc(samples[j + 1]), prop))
+                .apply(lambda prop: np.matmul(A_learned, prop))
                 .values
                 .tolist()
             )
@@ -507,34 +498,26 @@ def cross_validation(n, k, data: pd.DataFrame):
                 multioutput="raw_values",
             )
 
-            logged_r_squared_ys[i + j] = r_squared[0]
-            logged_r_squared_ts[i + j] = r_squared[1]
-            logged_r_squared_e[i + j] = r_squared[2]
+            logged_r_squared[:, i + j] = r_squared
 
-            difference_array = properties_array - predicted_array
+            logged_std[:, i + j] = calculate_std(properties_array, predicted_array)
 
-            logged_std_ys[i + j] = np.sqrt(np.sum(np.square(difference_array[:,0]), axis=0) / difference_array.shape[0])
-            logged_std_ts[i + j] = np.sqrt(np.sum(np.square(difference_array[:,1]), axis=0) / difference_array.shape[0])
-            logged_std_e[i + j] = np.sqrt(np.sum(np.square(difference_array[:,2]), axis=0) / difference_array.shape[0])
-
-            logged_mape_ys[i + j] = calculate_mape(properties_array[:,0], predicted_array[:,0])
-            logged_mape_ts[i + j] = calculate_mape(properties_array[:,1], predicted_array[:,1])
-            logged_mape_e[i + j] = calculate_mape(properties_array[:,2], predicted_array[:,2])
+            logged_mape[:, i + j] = calculate_mape(properties_array, predicted_array)
 
     errors_df = pd.DataFrame()
-    errors_df["yield_stress_R^2"] = logged_r_squared_ys
-    errors_df["tensile_stress_R^2"] = logged_r_squared_ts
-    errors_df["elongation_R^2"] = logged_r_squared_e
-    errors_df["yield_stress_std"] = logged_std_ys
-    errors_df["tensile_stress_std"] = logged_std_ts
-    errors_df["elongation_std"] = logged_std_e
-    errors_df["yield_stress_mape"] = logged_mape_ys
-    errors_df["tensile_stress_mape"] = logged_mape_ts
-    errors_df["elongation_mape"] = logged_mape_e
+    errors_df["yield_stress_R^2"] = logged_r_squared[0]
+    errors_df["tensile_stress_R^2"] = logged_r_squared[1]
+    errors_df["elongation_R^2"] = logged_r_squared[2]
+    errors_df["yield_stress_std"] = logged_std[0]
+    errors_df["tensile_stress_std"] = logged_std[1]
+    errors_df["elongation_std"] = logged_std[2]
+    errors_df["yield_stress_mape"] = logged_mape[0]
+    errors_df["tensile_stress_mape"] = logged_mape[1]
+    errors_df["elongation_mape"] = logged_mape[2]
 
     return errors_df
 
-errors_df = cross_validation(100, 3, test_alloy_properties)
+errors_df = cross_validation(1000, 3, test_alloy_properties)
 
 figure, axis = plt.subplots(3, 3)
 
