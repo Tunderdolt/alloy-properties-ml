@@ -437,13 +437,15 @@ for i in range(0, len(refined_alloy_properties.index)):
     ):
         count_not_equal += 1
 
-# Print the errors that have been calculated in the form [yield stress, tesnile stress, elongation]
+# Print the errors that have been calculated in the form [yield strength, tesnile strength, elongation]
 print(f"The R^2 for the entire dataset is {r_squared}")
 print(f"The std for the entire dataset is {std_combined}")
 print(f"The MAPE for the entire dataset is {mape_combined}")
 print(
     f"The percentage of incorrect assignments of elongation is {count_not_equal / count_have_data}"
 )
+
+refined_alloy_properties.to_csv(r"C:\Users\sambi\Programming\alloy-properties-ml\modified_steel_properties_database.csv")
 
 #
 # The following is to see if there is a correlation between error and and element composition
@@ -656,14 +658,14 @@ def cross_validation(n: int, k: int, data: pd.DataFrame):
 
     # Stores data within a dataframe
     errors_df: pd.DataFrame = pd.DataFrame()
-    errors_df["yield_stress_R^2"] = logged_r_squared[0]
-    errors_df["tensile_stress_R^2"] = logged_r_squared[1]
+    errors_df["yield_strength_R^2"] = logged_r_squared[0]
+    errors_df["tensile_strength_R^2"] = logged_r_squared[1]
     errors_df["elongation_R^2"] = logged_r_squared[2]
-    errors_df["yield_stress_std"] = logged_std[0]
-    errors_df["tensile_stress_std"] = logged_std[1]
+    errors_df["yield_strength_std"] = logged_std[0]
+    errors_df["tensile_strength_std"] = logged_std[1]
     errors_df["elongation_std"] = logged_std[2]
-    errors_df["yield_stress_mape"] = logged_mape[0]
-    errors_df["tensile_stress_mape"] = logged_mape[1]
+    errors_df["yield_strength_mape"] = logged_mape[0]
+    errors_df["tensile_strength_mape"] = logged_mape[1]
     errors_df["elongation_mape"] = logged_mape[2]
 
     return errors_df
@@ -674,14 +676,14 @@ errors_df = cross_validation(1000, 3, test_alloy_properties)
 # Generates distributions for each error 
 figure, axis = plt.subplots(3, 3)
 
-sns.kdeplot(data=errors_df, x="yield_stress_R^2", clip=(0.0, 1.0), ax=axis[0, 0])
-sns.kdeplot(data=errors_df, x="tensile_stress_R^2", clip=(0.0, 1.0), ax=axis[0, 1])
+sns.kdeplot(data=errors_df, x="yield_strenth_R^2", clip=(0.0, 1.0), ax=axis[0, 0])
+sns.kdeplot(data=errors_df, x="tensile_strength_R^2", clip=(0.0, 1.0), ax=axis[0, 1])
 sns.kdeplot(data=errors_df, x="elongation_R^2", clip=(0.0, 1.0), ax=axis[0, 2])
-sns.kdeplot(data=errors_df, x="yield_stress_std", clip=(0.0, 500.0), ax=axis[1, 0])
-sns.kdeplot(data=errors_df, x="tensile_stress_std", clip=(0.0, 500.0), ax=axis[1, 1])
+sns.kdeplot(data=errors_df, x="yield_strength_std", clip=(0.0, 500.0), ax=axis[1, 0])
+sns.kdeplot(data=errors_df, x="tensile_strength_std", clip=(0.0, 500.0), ax=axis[1, 1])
 sns.kdeplot(data=errors_df, x="elongation_std", clip=(0.0, 12.5), ax=axis[1, 2])
-sns.kdeplot(data=errors_df, x="yield_stress_mape", clip=(0.0, 100.0), ax=axis[2, 0])
-sns.kdeplot(data=errors_df, x="tensile_stress_mape", clip=(0.0, 100.0), ax=axis[2, 1])
+sns.kdeplot(data=errors_df, x="yield_strength_mape", clip=(0.0, 100.0), ax=axis[2, 0])
+sns.kdeplot(data=errors_df, x="tensile_strength_mape", clip=(0.0, 100.0), ax=axis[2, 1])
 sns.kdeplot(data=errors_df, x="elongation_mape", clip=(0.0, 100.0), ax=axis[2, 2])
 
 plt.show()
