@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import sklearn.linear_model
+from scipy import optimize
 from sklearn.metrics import r2_score
 
 # Define fixed values as Literals
@@ -730,3 +731,74 @@ sns.kdeplot(data=errors_df, x="tensile_strength_mape", clip=(0.0, 100.0), ax=axi
 sns.kdeplot(data=errors_df, x="elongation_mape", clip=(0.0, 100.0), ax=axis[2, 2])
 
 plt.show()
+
+#
+# The following is an algorithm to find an optimal minimum composition of Co and Ni for best mechanical properties
+# and Ni content for best mechanical properties
+#
+
+# Ignore this for the time being
+
+bounds: np.ndarray = np.array(
+    [
+        [
+            refined_alloy_properties[element].min() * 0.75,
+            refined_alloy_properties[element].max() * 1.25,
+        ]
+        for element in ELEMENTS
+    ]
+)
+
+bounds_tuple_list = list(map(tuple, bounds.reshape((14, 2))))
+
+initial_ranges: np.ndarray = np.array(
+    [
+        [
+            0.75 * bounds[i, 0] + 0.25 * bounds[i, 1],
+            0.75 * bounds[i, 1] + 0.25 * bounds[i, 0],
+        ]
+        for i in range(0, 14)
+    ]
+)
+
+x_start = np.random.uniform(
+    low=initial_ranges[:, 0].transpose(),
+    high=initial_ranges[:, 1].transpose(),
+    size=(1, 14),
+).transpose()
+
+x_start = x_start * 100 / np.sum(x_start)
+
+w1 = 0.0025
+w2 = 0.01
+analytical_weights_intermediate = np.mean(
+    reduced_alloy_properties["combined_predicted"]
+)
+analytical_weights = (
+    np.sum(analytical_weights_intermediate) / analytical_weights_intermediate
+)
+alpha = analytical_weights[0]
+beta = analytical_weights[1]
+gamma = analytical_weights[2]
+
+y_current = np.matmul(A_learned, x_start)
+
+function_to_min = x_start[5] + x_start[10]
+function = alpha * y_current[0] + beta * y_current[1] + gamma * y_current[2]
+
+def total_function(x: np.ndarray):
+   x_dash = np.array([x[0:4], x[5:9], x[10:14]]).reshape(12)
+   sum_x_dash = sum(x_dash)
+   x[5] = x[5]
+   x[10] = x[10]
+   x[0:4] = [x_dash[i] * 100 / sum_x_dash for i in range(0, 4)]
+   x[5:9] = [x_dash[i] * 100 / sum_x_dash for i in range(4, 8)]
+   x[10:14] = [x_dash[i] * 100 / sum_x_dash for i in range(8, 12)]
+   function_to_min = x[5] + x[10]
+   y = np.matmul(A_learned, x)
+   function_to_max = alpha * y[0] + beta * y[1] + gamma * y[2]
+   return w1 * function_to_max - w2 * function_to_min
+
+ans = optimize.minimize(total_function, x_start.reshape(14), bounds=bounds_tuple_list)
+
+print(ans.x)
