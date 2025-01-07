@@ -75,6 +75,11 @@ class DataframeWriter:
         ----------
         formula : str
             A continuous string denoting the chemical formula in the form element, ratio without delimeters
+
+        Returns 
+        -------
+        weight_dict : dict[str, float]
+            A dictionary containing the element and it's respective weight% omposition
         """
         atom_list: list[str] = list(formula)
 
@@ -134,7 +139,7 @@ class DataframeWriter:
 
         total_weight = sum(weight_dict_intermediate.values())
 
-        weight_dict = {}
+        weight_dict: dict[str, float] = {}
         for key in weight_dict_intermediate:
             weight_dict[key] = round(
                 100 * weight_dict_intermediate[key] / total_weight, 2
@@ -143,7 +148,13 @@ class DataframeWriter:
         return weight_dict
 
     def data_fill(self):
-        """Inserts new columns into data that are filled with manually calculated weight percents"""
+        """Inserts new columns into data that are filled with manually calculated weight percents
+        
+        Returns
+        -------
+        self.data : pd.DataFrame
+            The modified attribute DataFrame
+        """
         fe_calc: list = []
         c_calc: list = []
         mn_calc: list = []
@@ -203,6 +214,11 @@ class DataframeWriter:
         ----------
         n : int
             The number of samples
+
+        Returns
+        -------
+        fe_sample_data : list[pd.DataFrame]
+            List of stratified sample DataFrames
         """
         sorted_data: pd.DataFrame = self.data.sort_values(["fe"], ignore_index=True)
         length_of_segment = int(round(len(self.data.index) / n))
@@ -216,7 +232,7 @@ class DataframeWriter:
                 .reset_index(drop=True)
             )
 
-        # Fills final sample in dictionary for the possibility that the number of rows of the dataframe is not perfectly divisible by n
+        # Fills final sample in dictionary for the possibility that the number of rows of the DataFrame is not perfectly divisible by n
         shuffled_fe_dict[f"shuffled_fe_data{n}"] = (
             sorted_data.iloc[(n - 1) * length_of_segment : len(self.data.index)]
             .sample(frac=1)
@@ -268,6 +284,11 @@ def a_calc(data: pd.DataFrame, y: list[str] = PROPERTIES, x: list[str] = ELEMENT
         The columns in data which correspond to the x vector
     y : list[str]
         The columns in data which correspond to the y vector
+
+    Returns
+    -------
+    A : np.ndarray
+        Coefficient of linear fit
     """
     # Remove rows that contain instances of np.nan as they cannot contribute to a fit as they are not plottable
     data = data.dropna()
@@ -291,6 +312,11 @@ def calculate_mape(actual: np.ndarray, predicted: np.ndarray) -> float:
         The value(s) we know to be true
     predicted : np.ndarray
         The values(s) we calculate
+    
+    Returns
+    -------
+    Mean Average Percentage Error : np.ndarray
+        The Percentage Error for a linear fit of data
     """
     return np.mean(np.abs((actual - predicted) / actual), axis=0) * 100
 
@@ -306,9 +332,14 @@ def calculate_std(actual: np.ndarray, predicted: np.ndarray, mean: float = 0):
         The values(s) we calculate
     mean : float, optional
         The expected mean difference of the actual and predicted values, default = 0
+
+    Returns
+    -------
+    Standard Deviation : np.ndarray
+        The Standard Deviation for the data
     """
     return np.sqrt(
-        np.sum(np.square(actual - predicted - mean), axis=0)
+        np.sum(np.square((actual - predicted) - mean), axis=0)
         / (actual - predicted).shape[0]
     )
 
@@ -320,6 +351,11 @@ def categorise_elongation(elongation: float) -> ElongationCategory:
     ----------
     elongation : float
         The value of elongation to be catagorised
+    
+    Returns
+    -------
+    Catagory : str
+        The catagory which the value falls into
     """
     # Cannot classify a value that does not exist, i.e is np.nan
     if np.isnan(elongation):
@@ -356,7 +392,7 @@ refined_alloy_properties: pd.DataFrame = pd.DataFrame(
     }
 )
 # Fills the remianing data within refined_alloy_proerties.
-# We generate this new dataframe as it contains better data to work with
+# We generate this new DataFrame as it contains better data to work with
 refined_alloy_properties["fe"] = alloy_properties["fe_calc"]
 refined_alloy_properties["combined_compositions"] = refined_alloy_properties[
     [element for element in ELEMENTS]
@@ -617,6 +653,11 @@ def cross_validation(n: int, k: int, data: pd.DataFrame):
         The number of samples we obtain from the data
     data : pd.DataFrame
         The data to validate with
+    
+    Returns
+    -------
+    errors_df : pd.DataFrame
+        A DataFrame containing the errors calculated from the model
     """
     dataframe_test = DataframeWriter(data)
     # Loops n * (k - 1) times as if we split data by 3 we can do 2 cross-validations for that data
@@ -656,7 +697,7 @@ def cross_validation(n: int, k: int, data: pd.DataFrame):
             logged_std[:, i + j] = calculate_std(properties_array, predicted_array)
             logged_mape[:, i + j] = calculate_mape(properties_array, predicted_array)
 
-    # Stores data within a dataframe
+    # Stores data within a DataFrame
     errors_df: pd.DataFrame = pd.DataFrame()
     errors_df["yield_strength_R^2"] = logged_r_squared[0]
     errors_df["tensile_strength_R^2"] = logged_r_squared[1]
@@ -676,7 +717,7 @@ errors_df = cross_validation(1000, 3, test_alloy_properties)
 # Generates distributions for each error 
 figure, axis = plt.subplots(3, 3)
 
-sns.kdeplot(data=errors_df, x="yield_strenth_R^2", clip=(0.0, 1.0), ax=axis[0, 0])
+sns.kdeplot(data=errors_df, x="yield_strength_R^2", clip=(0.0, 1.0), ax=axis[0, 0])
 sns.kdeplot(data=errors_df, x="tensile_strength_R^2", clip=(0.0, 1.0), ax=axis[0, 1])
 sns.kdeplot(data=errors_df, x="elongation_R^2", clip=(0.0, 1.0), ax=axis[0, 2])
 sns.kdeplot(data=errors_df, x="yield_strength_std", clip=(0.0, 500.0), ax=axis[1, 0])
