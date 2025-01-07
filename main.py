@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import sklearn.linear_model
-import skopt
 from sklearn.metrics import r2_score
 
 # Define fixed values as Literals
@@ -76,7 +75,7 @@ class DataframeWriter:
         formula : str
             A continuous string denoting the chemical formula in the form element, ratio without delimeters
 
-        Returns 
+        Returns
         -------
         weight_dict : dict[str, float]
             A dictionary containing the element and it's respective weight% omposition
@@ -149,7 +148,7 @@ class DataframeWriter:
 
     def data_fill(self):
         """Inserts new columns into data that are filled with manually calculated weight percents
-        
+
         Returns
         -------
         self.data : pd.DataFrame
@@ -312,7 +311,7 @@ def calculate_mape(actual: np.ndarray, predicted: np.ndarray) -> float:
         The value(s) we know to be true
     predicted : np.ndarray
         The values(s) we calculate
-    
+
     Returns
     -------
     Mean Average Percentage Error : np.ndarray
@@ -351,7 +350,7 @@ def categorise_elongation(elongation: float) -> ElongationCategory:
     ----------
     elongation : float
         The value of elongation to be catagorised
-    
+
     Returns
     -------
     Catagory : str
@@ -436,7 +435,7 @@ predicted_array = np.array(
     reduced_alloy_properties["combined_predicted"].values.tolist()
 )
 
-# Calculates R^2 value for each property 
+# Calculates R^2 value for each property
 r_squared = list(
     r2_score(
         properties_array,
@@ -448,7 +447,7 @@ r_squared = list(
 # Calculates standard deviation for each property
 std_combined = calculate_std(properties_array, predicted_array)
 
-#Calculates Mean Average Percentage Error for each property
+# Calculates Mean Average Percentage Error for each property
 mape_combined = calculate_mape(properties_array, predicted_array)
 
 # Catagorises elongation and inserts this as a column into the DataFrame
@@ -481,7 +480,9 @@ print(
     f"The percentage of incorrect assignments of elongation is {count_not_equal / count_have_data}"
 )
 
-refined_alloy_properties.to_csv(r"C:\Users\sambi\Programming\alloy-properties-ml\modified_steel_properties_database.csv")
+refined_alloy_properties.to_csv(
+    r"C:\Users\sambi\Programming\alloy-properties-ml\modified_steel_properties_database.csv"
+)
 
 #
 # The following is to see if there is a correlation between error and and element composition
@@ -508,7 +509,7 @@ refined_alloy_properties["percent_error_e"] = refined_alloy_properties[
 ].apply(lambda prop: prop[2])
 refined_alloy_properties = refined_alloy_properties.dropna()
 
-# The following plots all plot a distribution of percentage error of a particular property 
+# The following plots all plot a distribution of percentage error of a particular property
 # These are explained and descirbed further in the text document
 figure, axis = plt.subplots(2, 7)
 
@@ -644,7 +645,7 @@ plt.show()
 
 def cross_validation(n: int, k: int, data: pd.DataFrame):
     """A cross-validation algorithm to validate a linear model
-    
+
     Parameters
     ----------
     n : int
@@ -653,7 +654,7 @@ def cross_validation(n: int, k: int, data: pd.DataFrame):
         The number of samples we obtain from the data
     data : pd.DataFrame
         The data to validate with
-    
+
     Returns
     -------
     errors_df : pd.DataFrame
@@ -711,10 +712,11 @@ def cross_validation(n: int, k: int, data: pd.DataFrame):
 
     return errors_df
 
+
 # Runs cross-validation
 errors_df = cross_validation(1000, 3, test_alloy_properties)
 
-# Generates distributions for each error 
+# Generates distributions for each error
 figure, axis = plt.subplots(3, 3)
 
 sns.kdeplot(data=errors_df, x="yield_strength_R^2", clip=(0.0, 1.0), ax=axis[0, 0])
@@ -728,82 +730,3 @@ sns.kdeplot(data=errors_df, x="tensile_strength_mape", clip=(0.0, 100.0), ax=axi
 sns.kdeplot(data=errors_df, x="elongation_mape", clip=(0.0, 100.0), ax=axis[2, 2])
 
 plt.show()
-
-#
-# The following is an algorithm to find an optimal minimum composition of Co and Ni for best mechanical properties
-# and Ni content for best mechanical properties
-#
-
-# Ignore this for the time being
-
-bounds: np.ndarray = np.array(
-    [
-        [
-            refined_alloy_properties[element].min(),
-            refined_alloy_properties[element].max(),
-        ]
-        for element in ELEMENTS
-    ]
-)
-
-bounds_tuple_list = list(map(tuple, bounds.reshape((14, 2))))
-
-initial_ranges: np.ndarray = np.array(
-    [
-        [
-            0.75 * bounds[i, 0] + 0.25 * bounds[i, 1],
-            0.75 * bounds[i, 1] + 0.25 * bounds[i, 0],
-        ]
-        for i in range(0, 14)
-    ]
-)
-
-x_start = np.random.uniform(
-    low=initial_ranges[:, 0].transpose(),
-    high=initial_ranges[:, 1].transpose(),
-    size=(1, 14),
-).transpose()
-
-x_start = x_start * 100 / np.sum(x_start)
-
-w1 = 0.0025
-w2 = 1
-analytical_weights_intermediate = np.mean(
-    reduced_alloy_properties["combined_predicted"]
-)
-analytical_weights = (
-    np.sum(analytical_weights_intermediate) / analytical_weights_intermediate
-)
-alpha = analytical_weights[0]
-beta = analytical_weights[1]
-gamma = analytical_weights[2]
-
-y_current = np.matmul(A_learned, x_start)
-
-function_to_min = x_start[5] + x_start[10]
-function = alpha * y_current[0] + beta * y_current[1] + gamma * y_current[2]
-
-# Okay, taking a break to try and sleep but I believe the ideal way to go forward from this point
-# is to analytically find the minimum as written, where we can find the minimum partial by looking
-# only at the differece as a ratio of x1, so x1 + ax1, and then changing all the other components
-# by the same amount. After finding partials for both a and b, we have found our minimum for x_Co
-# and x_Ni. Neither of their A components are negative so this should, theoretically, always be
-# a minima. This should, hopefully, be nice and fast.
-
-
-def total_function(x):
-   x_dash = x[0:4] + x[5:9] + x[10:14]
-   sum_x_dash = sum(x_dash)
-   x[5] = x[5]
-   x[10] = x[10]
-   x[0:4] = [x_dash[i] * 100 / sum_x_dash for i in range(0, 4)]
-   x[5:9] = [x_dash[i] * 100 / sum_x_dash for i in range(4, 9)]
-   x[10:14] = [x_dash[i] * 100 / sum_x_dash for i in range(9, 12)]
-   function_to_min = x[5] + x[10]
-   function_to_max = np.matmul(A_learned, x)
-   return w1 * function_to_max - w2 * function_to_min
-
-
-ans = skopt.gp_minimize(total_function, bounds_tuple_list)
-
-print(ans.x)
