@@ -1,5 +1,6 @@
 # main
 
+import warnings
 from typing import Literal, get_args
 
 import matplotlib.pyplot as plt
@@ -7,7 +8,12 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import sklearn.linear_model
+from scipy.optimize import minimize
 from sklearn.metrics import r2_score
+
+warnings.filterwarnings(
+    "ignore", message="delta_grad == 0.0. Check if the approximated function is linear."
+)
 
 # Define fixed values as Literals
 Element = Literal[
@@ -513,7 +519,6 @@ refined_alloy_properties = refined_alloy_properties.dropna()
 # These are explained and descirbed further in the text document
 figure, axis = plt.subplots(2, 7)
 
-
 plots_ys: dict[str, plt.Axes] = {}
 k = 0
 
@@ -645,7 +650,6 @@ plt.show()
 
 def cross_validation(n: int, k: int, data: pd.DataFrame):
     """A cross-validation algorithm to validate a linear model
-
     Parameters
     ----------
     n : int
@@ -654,7 +658,6 @@ def cross_validation(n: int, k: int, data: pd.DataFrame):
         The number of samples we obtain from the data
     data : pd.DataFrame
         The data to validate with
-
     Returns
     -------
     errors_df : pd.DataFrame
@@ -730,3 +733,114 @@ sns.kdeplot(data=errors_df, x="tensile_strength_mape", clip=(0.0, 100.0), ax=axi
 sns.kdeplot(data=errors_df, x="elongation_mape", clip=(0.0, 100.0), ax=axis[2, 2])
 
 plt.show()
+
+#
+# The following is an algorithm to find an optimal minimum composition of Co and Ni for best mechanical properties
+# and Ni content for best mechanical properties
+#
+
+
+# Function to minimise
+def total_function(x: np.ndarray):
+    y = np.matmul(A_learned, x)
+    function_to_min = x[5] + x[10]
+    function_to_max = np.dot(y, analytical_weights)
+    # w2 is kept dynamic. This is discussed in the text document for this project.
+    w2 = scale_factor * function_to_max / function_to_min
+    return -w1 * function_to_max + w2 * function_to_min
+
+
+# Declare bounds for each element
+bounds_tuple_list = [
+    (40, 100),
+    (0, 1),
+    (0, 5),
+    (0, 5),
+    (0, 20),
+    (0, 25),
+    (0, 15),
+    (0, 5),
+    (0, 0.5),
+    (0, 5),
+    (0, 25),
+    (0, 15),
+    (0, 3),
+    (0, 5),
+]
+
+# The function naturally is punitive to elongation, so it is increased by the small factor of 1.3 to encourage the algorithm to weigh it equally.
+print(
+    "The following three numbers you input will determine wether to give more weight to Yield Strength, Tensile Strength, or Elongation respectively. Please keep numbers between 0.5 and 2, where 0.5 is no care for that property and 2 is most care for that. If you want all three to be equally weighted input the same number"
+)
+a = float(input("Yield Strength: "))
+b = float(input("Tensile Strength: "))
+c = float(input("Elongation: ")) * 1.3
+prop_weights = np.array([a, b, c])
+
+# Calculates weights for each property
+analytical_weights_intermediate = np.mean(
+    reduced_alloy_properties["combined_predicted"]
+)
+analytical_weights = (
+    np.sum(analytical_weights_intermediate) / analytical_weights_intermediate
+)
+analytical_weights = analytical_weights * prop_weights
+w1 = 1
+
+# Constrains every x vector to sum to 100 and y must be positive
+cons = [
+    {"type": "eq", "fun": lambda x: 100 - sum(x)},
+    {"type": "ineq", "fun": lambda x: np.min(A_learned @ x)},
+]
+
+# Initiate variables for loop
+x_current = np.zeros(14)
+y_current = np.zeros(3)
+overall_function_to_max_current = 0
+overall_function_to_min_current = 0
+
+# Generates random initial guess within bounds
+x_start = np.random.uniform(
+    low=[np.array(bounds_tuple_list[i][0]) for i in range(0, 14)],
+    high=[np.array(bounds_tuple_list[i][1]) for i in range(0, 14)],
+    size=(14),
+)
+
+# Sets initial guess to sum to 100
+x_start = x_start * 100 / np.sum(x_start)
+
+for i in range(0, 1000):
+    # Sets a random scale factor as the ideal is very difficult to find
+    scale_factor = np.random.uniform(0.99999995, 1)
+
+    # Minimises function
+    ans = minimize(
+        total_function,
+        x_start,
+        bounds=bounds_tuple_list,
+        constraints=cons,
+        method="trust-constr",
+        hess=lambda x: np.zeros((14, 14)),
+    )
+
+    # Declares functions for manual loop
+    overall_function_to_max = np.dot(np.matmul(A_learned, ans.x), analytical_weights)
+    overall_function_to_min = ans.x[5] + ans.x[10]
+
+    # w3 defined the same as w2 just for the loop
+    w3 = scale_factor * overall_function_to_max / overall_function_to_min
+
+    # Same as total_function
+    if (-w1 * overall_function_to_max + w3 * overall_function_to_min) < (
+        -w1 * overall_function_to_max_current + w3 * overall_function_to_min_current
+    ):
+        x_current = ans.x
+        y_current = np.matmul(A_learned, ans.x)
+        overall_function_to_max_current = overall_function_to_max
+        overall_function_to_min_current = overall_function_to_min
+
+
+# Optimal vector x
+print(x_current)
+# Optimal corresponding vector y
+print(y_current)
