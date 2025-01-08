@@ -1,5 +1,6 @@
 # main
 
+import warnings
 from typing import Literal, get_args
 
 import matplotlib.pyplot as plt
@@ -9,9 +10,10 @@ import seaborn as sns
 import sklearn.linear_model
 from scipy.optimize import minimize
 from sklearn.metrics import r2_score
-import warnings
 
-warnings.filterwarnings("ignore", message="delta_grad == 0.0. Check if the approximated function is linear.")
+warnings.filterwarnings(
+    "ignore", message="delta_grad == 0.0. Check if the approximated function is linear."
+)
 
 # Define fixed values as Literals
 Element = Literal[
@@ -492,259 +494,261 @@ refined_alloy_properties.to_csv(
 # The following is to see if there is a correlation between error and and element composition
 #
 
-## Creates columns for percentage error for each property
-#refined_alloy_properties["percent_error_combined"] = abs(
-#   (
-#       refined_alloy_properties["combined_properties"]
-#       - refined_alloy_properties["combined_predicted"]
-#   )
-#   / refined_alloy_properties["combined_properties"]
-#)
+# Creates columns for percentage error for each property
+refined_alloy_properties["percent_error_combined"] = abs(
+    (
+        refined_alloy_properties["combined_properties"]
+        - refined_alloy_properties["combined_predicted"]
+    )
+    / refined_alloy_properties["combined_properties"]
+)
+
+# Seperates those into their respective columns
+refined_alloy_properties["percent_error_ys"] = refined_alloy_properties[
+    "percent_error_combined"
+].apply(lambda prop: prop[0])
+refined_alloy_properties["percent_error_ts"] = refined_alloy_properties[
+    "percent_error_combined"
+].apply(lambda prop: prop[1])
+refined_alloy_properties["percent_error_e"] = refined_alloy_properties[
+    "percent_error_combined"
+].apply(lambda prop: prop[2])
+refined_alloy_properties = refined_alloy_properties.dropna()
+
+# The following plots all plot a distribution of percentage error of a particular property
+# These are explained and descirbed further in the text document
+figure, axis = plt.subplots(2, 7)
+
+plots_ys: dict[str, plt.Axes] = {}
+k = 0
+
+# Loop generates the plots for each element
+for i in range(0, len(ELEMENTS)):
+    j = i
+    if j >= int(len(ELEMENTS) / 2):
+        k = 1
+        j = i - int(len(ELEMENTS) / 2)
+    plots_ys[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+        data=refined_alloy_properties,
+        y=f"{ELEMENTS[i]}",
+        x="percent_error_ys",
+        ax=axis[k, j],
+        fill=True,
+        cmap="rocket_r",
+    )
+    plots_ys[f"{ELEMENTS[i]}_err"].set_xlim([0, 0.6])
+    plots_ys[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
+
+# Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
+plots_ys["fe_err"].set_ylim([60, 85])
+plots_ys["c_err"].set_ylim(top=0.45)
+plots_ys["mn_err"].set_ylim(top=1)
+plots_ys["si_err"].set_ylim(top=2.5)
+plots_ys["cr_err"].set_ylim(top=22.5)
+plots_ys["ni_err"].set_ylim(top=25)
+plots_ys["mo_err"].set_ylim(top=8)
+plots_ys["v_err"].set_ylim(top=1.4)
+plots_ys["n_err"].set_ylim(top=0.055)
+plots_ys["nb_err"].set_ylim(top=0.25)
+plots_ys["co_err"].set_ylim(top=22.5)
+plots_ys["w_err"].set_ylim(top=2.5)
+plots_ys["al_err"].set_ylim(top=1.4)
+plots_ys["ti_err"].set_ylim(top=2.75)
+
+# Seperates each subplot such that overlap of subplots and axes titles won't be present
+plt.tight_layout(w_pad=-2.5, h_pad=-1)
+plt.show()
+
+figure, axis = plt.subplots(2, 7)
+
+plots_ts: dict[str, plt.Axes] = {}
+k = 0
+
+# Loop generates the plots for each element
+for i in range(0, len(ELEMENTS)):
+    j = i
+    if j >= int(len(ELEMENTS) / 2):
+        k = 1
+        j = i - int(len(ELEMENTS) / 2)
+    plots_ts[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+        data=refined_alloy_properties,
+        y=f"{ELEMENTS[i]}",
+        x="percent_error_ts",
+        ax=axis[k, j],
+        fill=True,
+        cmap="rocket_r",
+    )
+    plots_ts[f"{ELEMENTS[i]}_err"].set_xlim([0, 0.6])
+    plots_ts[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
+
+# Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
+plots_ts["fe_err"].set_ylim([60, 85])
+plots_ts["c_err"].set_ylim(top=0.5)
+plots_ts["mn_err"].set_ylim(top=1.1)
+plots_ts["si_err"].set_ylim(top=2.5)
+plots_ts["cr_err"].set_ylim(top=22.5)
+plots_ts["ni_err"].set_ylim(top=25)
+plots_ts["mo_err"].set_ylim(top=8)
+plots_ts["v_err"].set_ylim(top=1.4)
+plots_ts["n_err"].set_ylim(top=0.055)
+plots_ts["nb_err"].set_ylim(top=0.25)
+plots_ts["co_err"].set_ylim(top=22.5)
+plots_ts["w_err"].set_ylim(top=2.75)
+plots_ts["al_err"].set_ylim(top=1.4)
+plots_ts["ti_err"].set_ylim(top=2.75)
+
+# Seperates each subplot such that overlap of subplots and axes titles won't be present
+plt.tight_layout(w_pad=-2.5, h_pad=-1)
+plt.show()
+
+figure, axis = plt.subplots(2, 7)
+
+plots_e: dict[str, plt.Axes] = {}
+k = 0
+
+# Loop generates the plots for each element
+for i in range(0, len(ELEMENTS)):
+    j = i
+    if j >= int(len(ELEMENTS) / 2):
+        k = 1
+        j = i - int(len(ELEMENTS) / 2)
+    plots_e[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+        data=refined_alloy_properties,
+        y=f"{ELEMENTS[i]}",
+        x="percent_error_e",
+        ax=axis[k, j],
+        fill=True,
+        cmap="cividis_r",
+    )
+    plots_e[f"{ELEMENTS[i]}_err"].set_xlim([0, 2.5])
+    plots_e[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
+
+# Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
+plots_e["fe_err"].set_ylim([60, 85])
+plots_e["c_err"].set_ylim(top=0.5)
+plots_e["mn_err"].set_ylim(top=1.2)
+plots_e["si_err"].set_ylim(top=2.5)
+plots_e["cr_err"].set_ylim(top=22.5)
+plots_e["ni_err"].set_ylim(top=25)
+plots_e["mo_err"].set_ylim(top=8)
+plots_e["v_err"].set_ylim(top=2.25)
+plots_e["n_err"].set_ylim(top=0.06)
+plots_e["nb_err"].set_ylim(top=0.36)
+plots_e["co_err"].set_ylim(top=22.5)
+plots_e["w_err"].set_ylim(top=2.25)
+plots_e["al_err"].set_ylim(top=1.4)
+plots_e["ti_err"].set_ylim(top=2.5)
+
+# Seperates each subplot such that overlap of subplots and axes titles won't be present
+plt.tight_layout(w_pad=-3.5, h_pad=-1)
+plt.show()
+
 #
-## Seperates those into their respective columns
-#refined_alloy_properties["percent_error_ys"] = refined_alloy_properties[
-#   "percent_error_combined"
-#].apply(lambda prop: prop[0])
-#refined_alloy_properties["percent_error_ts"] = refined_alloy_properties[
-#   "percent_error_combined"
-#].apply(lambda prop: prop[1])
-#refined_alloy_properties["percent_error_e"] = refined_alloy_properties[
-#   "percent_error_combined"
-#].apply(lambda prop: prop[2])
-#refined_alloy_properties = refined_alloy_properties.dropna()
+# The following is to validate the above model.
 #
-## The following plots all plot a distribution of percentage error of a particular property
-## These are explained and descirbed further in the text document
-#figure, axis = plt.subplots(2, 7)
-#
-#plots_ys: dict[str, plt.Axes] = {}
-#k = 0
-#
-## Loop generates the plots for each element
-#for i in range(0, len(ELEMENTS)):
-#   j = i
-#   if j >= int(len(ELEMENTS) / 2):
-#       k = 1
-#       j = i - int(len(ELEMENTS) / 2)
-#   plots_ys[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
-#       data=refined_alloy_properties,
-#       y=f"{ELEMENTS[i]}",
-#       x="percent_error_ys",
-#       ax=axis[k, j],
-#       fill=True,
-#       cmap="rocket_r",
-#   )
-#   plots_ys[f"{ELEMENTS[i]}_err"].set_xlim([0, 0.6])
-#   plots_ys[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
-#
-## Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
-#plots_ys["fe_err"].set_ylim([60, 85])
-#plots_ys["c_err"].set_ylim(top=0.45)
-#plots_ys["mn_err"].set_ylim(top=1)
-#plots_ys["si_err"].set_ylim(top=2.5)
-#plots_ys["cr_err"].set_ylim(top=22.5)
-#plots_ys["ni_err"].set_ylim(top=25)
-#plots_ys["mo_err"].set_ylim(top=8)
-#plots_ys["v_err"].set_ylim(top=1.4)
-#plots_ys["n_err"].set_ylim(top=0.055)
-#plots_ys["nb_err"].set_ylim(top=0.25)
-#plots_ys["co_err"].set_ylim(top=22.5)
-#plots_ys["w_err"].set_ylim(top=2.5)
-#plots_ys["al_err"].set_ylim(top=1.4)
-#plots_ys["ti_err"].set_ylim(top=2.75)
-#
-## Seperates each subplot such that overlap of subplots and axes titles won't be present
-#plt.tight_layout(w_pad=-2.5, h_pad=-1)
-#plt.show()
-#
-#figure, axis = plt.subplots(2, 7)
-#
-#plots_ts: dict[str, plt.Axes] = {}
-#k = 0
-#
-## Loop generates the plots for each element
-#for i in range(0, len(ELEMENTS)):
-#   j = i
-#   if j >= int(len(ELEMENTS) / 2):
-#       k = 1
-#       j = i - int(len(ELEMENTS) / 2)
-#   plots_ts[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
-#       data=refined_alloy_properties,
-#       y=f"{ELEMENTS[i]}",
-#       x="percent_error_ts",
-#       ax=axis[k, j],
-#       fill=True,
-#       cmap="rocket_r",
-#   )
-#   plots_ts[f"{ELEMENTS[i]}_err"].set_xlim([0, 0.6])
-#   plots_ts[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
-#
-## Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
-#plots_ts["fe_err"].set_ylim([60, 85])
-#plots_ts["c_err"].set_ylim(top=0.5)
-#plots_ts["mn_err"].set_ylim(top=1.1)
-#plots_ts["si_err"].set_ylim(top=2.5)
-#plots_ts["cr_err"].set_ylim(top=22.5)
-#plots_ts["ni_err"].set_ylim(top=25)
-#plots_ts["mo_err"].set_ylim(top=8)
-#plots_ts["v_err"].set_ylim(top=1.4)
-#plots_ts["n_err"].set_ylim(top=0.055)
-#plots_ts["nb_err"].set_ylim(top=0.25)
-#plots_ts["co_err"].set_ylim(top=22.5)
-#plots_ts["w_err"].set_ylim(top=2.75)
-#plots_ts["al_err"].set_ylim(top=1.4)
-#plots_ts["ti_err"].set_ylim(top=2.75)
-#
-## Seperates each subplot such that overlap of subplots and axes titles won't be present
-#plt.tight_layout(w_pad=-2.5, h_pad=-1)
-#plt.show()
-#
-#figure, axis = plt.subplots(2, 7)
-#
-#plots_e: dict[str, plt.Axes] = {}
-#k = 0
-#
-## Loop generates the plots for each element
-#for i in range(0, len(ELEMENTS)):
-#   j = i
-#   if j >= int(len(ELEMENTS) / 2):
-#       k = 1
-#       j = i - int(len(ELEMENTS) / 2)
-#   plots_e[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
-#       data=refined_alloy_properties,
-#       y=f"{ELEMENTS[i]}",
-#       x="percent_error_e",
-#       ax=axis[k, j],
-#       fill=True,
-#       cmap="cividis_r",
-#   )
-#   plots_e[f"{ELEMENTS[i]}_err"].set_xlim([0, 2.5])
-#   plots_e[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
-#
-## Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
-#plots_e["fe_err"].set_ylim([60, 85])
-#plots_e["c_err"].set_ylim(top=0.5)
-#plots_e["mn_err"].set_ylim(top=1.2)
-#plots_e["si_err"].set_ylim(top=2.5)
-#plots_e["cr_err"].set_ylim(top=22.5)
-#plots_e["ni_err"].set_ylim(top=25)
-#plots_e["mo_err"].set_ylim(top=8)
-#plots_e["v_err"].set_ylim(top=2.25)
-#plots_e["n_err"].set_ylim(top=0.06)
-#plots_e["nb_err"].set_ylim(top=0.36)
-#plots_e["co_err"].set_ylim(top=22.5)
-#plots_e["w_err"].set_ylim(top=2.25)
-#plots_e["al_err"].set_ylim(top=1.4)
-#plots_e["ti_err"].set_ylim(top=2.5)
-#
-## Seperates each subplot such that overlap of subplots and axes titles won't be present
-#plt.tight_layout(w_pad=-3.5, h_pad=-1)
-#plt.show()
-#
-##
-## The following is to validate the above model.
-##
-#
-#
-#def cross_validation(n: int, k: int, data: pd.DataFrame):
-#    """A cross-validation algorithm to validate a linear model
-#    Parameters
-#    ----------
-#    n : int
-#        The number of times to run the algorithm
-#    k : int
-#        The number of samples we obtain from the data
-#    data : pd.DataFrame
-#        The data to validate with
-#    Returns
-#    -------
-#    errors_df : pd.DataFrame
-#        A DataFrame containing the errors calculated from the model
-#    """
-#    dataframe_test = DataframeWriter(data)
-#    # Loops n * (k - 1) times as if we split data by 3 we can do 2 cross-validations for that data
-#    loop_range = n * (k - 1)
-#    # Create empty array to fill with error for every loop
-#    logged_std: np.ndarray = np.zeros([3, loop_range])
-#    logged_r_squared: np.ndarray = np.zeros([3, loop_range])
-#    logged_mape: np.ndarray = np.zeros([3, loop_range])
-#    
-#    for i in range(0, loop_range, k - 1):
-#        # Generates stratified samples
-#        samples: list[pd.DataFrame] = dataframe_test.data_shuffler(k)
-#        # Sets the first sample to be our control which the model is not trained on
-#        control_sample: pd.DataFrame = samples[0].dropna()
-#        properties_array: np.ndarray = np.array(
-#        control_sample["combined_properties"].values.tolist()
-#    )
-#
-#        # Trains sample for each non-control sample
-#        for j in range(0, k - 1):
-#            A_learned = a_calc(samples[j + 1])
-#
-#            predicted_array = np.array(
-#                control_sample["combined_compositions"]
-#                .apply(lambda prop: np.matmul(A_learned, prop))
-#                .values.tolist()
-#            )
-#
-#            r_squared = r2_score(
-#                properties_array,
-#                predicted_array,
-#                multioutput="raw_values",
-#            )
-#
-#            # Stores each value of error calculated
-#            logged_r_squared[:, i + j] = r_squared
-#            logged_std[:, i + j] = calculate_std(properties_array, predicted_array)
-#            logged_mape[:, i + j] = calculate_mape(properties_array, predicted_array)
-#
-#    # Stores data within a DataFrame
-#    errors_df: pd.DataFrame = pd.DataFrame()
-#    errors_df["yield_strength_R^2"] = logged_r_squared[0]
-#    errors_df["tensile_strength_R^2"] = logged_r_squared[1]
-#    errors_df["elongation_R^2"] = logged_r_squared[2]
-#    errors_df["yield_strength_std"] = logged_std[0]
-#    errors_df["tensile_strength_std"] = logged_std[1]
-#    errors_df["elongation_std"] = logged_std[2]
-#    errors_df["yield_strength_mape"] = logged_mape[0]
-#    errors_df["tensile_strength_mape"] = logged_mape[1]
-#    errors_df["elongation_mape"] = logged_mape[2]
-#
-#    return errors_df
-#
-#
-## Runs cross-validation
-#errors_df = cross_validation(1000, 3, test_alloy_properties)
-#
-## Generates distributions for each error
-#figure, axis = plt.subplots(3, 3)
-#
-#sns.kdeplot(data=errors_df, x="yield_strength_R^2", clip=(0.0, 1.0), ax=axis[0, 0])
-#sns.kdeplot(data=errors_df, x="tensile_strength_R^2", clip=(0.0, 1.0), ax=axis[0, 1])
-#sns.kdeplot(data=errors_df, x="elongation_R^2", clip=(0.0, 1.0), ax=axis[0, 2])
-#sns.kdeplot(data=errors_df, x="yield_strength_std", clip=(0.0, 500.0), ax=axis[1, 0])
-#sns.kdeplot(data=errors_df, x="tensile_strength_std", clip=(0.0, 500.0), ax=axis[1, 1])
-#sns.kdeplot(data=errors_df, x="elongation_std", clip=(0.0, 12.5), ax=axis[1, 2])
-#sns.kdeplot(data=errors_df, x="yield_strength_mape", clip=(0.0, 100.0), ax=axis[2, 0])
-#sns.kdeplot(data=errors_df, x="tensile_strength_mape", clip=(0.0, 100.0), ax=axis[2, 1])
-#sns.kdeplot(data=errors_df, x="elongation_mape", clip=(0.0, 100.0), ax=axis[2, 2])
-#
-#plt.show()
+
+
+def cross_validation(n: int, k: int, data: pd.DataFrame):
+    """A cross-validation algorithm to validate a linear model
+    Parameters
+    ----------
+    n : int
+        The number of times to run the algorithm
+    k : int
+        The number of samples we obtain from the data
+    data : pd.DataFrame
+        The data to validate with
+    Returns
+    -------
+    errors_df : pd.DataFrame
+        A DataFrame containing the errors calculated from the model
+    """
+    dataframe_test = DataframeWriter(data)
+    # Loops n * (k - 1) times as if we split data by 3 we can do 2 cross-validations for that data
+    loop_range = n * (k - 1)
+    # Create empty array to fill with error for every loop
+    logged_std: np.ndarray = np.zeros([3, loop_range])
+    logged_r_squared: np.ndarray = np.zeros([3, loop_range])
+    logged_mape: np.ndarray = np.zeros([3, loop_range])
+
+    for i in range(0, loop_range, k - 1):
+        # Generates stratified samples
+        samples: list[pd.DataFrame] = dataframe_test.data_shuffler(k)
+        # Sets the first sample to be our control which the model is not trained on
+        control_sample: pd.DataFrame = samples[0].dropna()
+        properties_array: np.ndarray = np.array(
+            control_sample["combined_properties"].values.tolist()
+        )
+
+        # Trains sample for each non-control sample
+        for j in range(0, k - 1):
+            A_learned = a_calc(samples[j + 1])
+
+            predicted_array = np.array(
+                control_sample["combined_compositions"]
+                .apply(lambda prop: np.matmul(A_learned, prop))
+                .values.tolist()
+            )
+
+            r_squared = r2_score(
+                properties_array,
+                predicted_array,
+                multioutput="raw_values",
+            )
+
+            # Stores each value of error calculated
+            logged_r_squared[:, i + j] = r_squared
+            logged_std[:, i + j] = calculate_std(properties_array, predicted_array)
+            logged_mape[:, i + j] = calculate_mape(properties_array, predicted_array)
+
+    # Stores data within a DataFrame
+    errors_df: pd.DataFrame = pd.DataFrame()
+    errors_df["yield_strength_R^2"] = logged_r_squared[0]
+    errors_df["tensile_strength_R^2"] = logged_r_squared[1]
+    errors_df["elongation_R^2"] = logged_r_squared[2]
+    errors_df["yield_strength_std"] = logged_std[0]
+    errors_df["tensile_strength_std"] = logged_std[1]
+    errors_df["elongation_std"] = logged_std[2]
+    errors_df["yield_strength_mape"] = logged_mape[0]
+    errors_df["tensile_strength_mape"] = logged_mape[1]
+    errors_df["elongation_mape"] = logged_mape[2]
+
+    return errors_df
+
+
+# Runs cross-validation
+errors_df = cross_validation(1000, 3, test_alloy_properties)
+
+# Generates distributions for each error
+figure, axis = plt.subplots(3, 3)
+
+sns.kdeplot(data=errors_df, x="yield_strength_R^2", clip=(0.0, 1.0), ax=axis[0, 0])
+sns.kdeplot(data=errors_df, x="tensile_strength_R^2", clip=(0.0, 1.0), ax=axis[0, 1])
+sns.kdeplot(data=errors_df, x="elongation_R^2", clip=(0.0, 1.0), ax=axis[0, 2])
+sns.kdeplot(data=errors_df, x="yield_strength_std", clip=(0.0, 500.0), ax=axis[1, 0])
+sns.kdeplot(data=errors_df, x="tensile_strength_std", clip=(0.0, 500.0), ax=axis[1, 1])
+sns.kdeplot(data=errors_df, x="elongation_std", clip=(0.0, 12.5), ax=axis[1, 2])
+sns.kdeplot(data=errors_df, x="yield_strength_mape", clip=(0.0, 100.0), ax=axis[2, 0])
+sns.kdeplot(data=errors_df, x="tensile_strength_mape", clip=(0.0, 100.0), ax=axis[2, 1])
+sns.kdeplot(data=errors_df, x="elongation_mape", clip=(0.0, 100.0), ax=axis[2, 2])
+
+plt.show()
 
 #
 # The following is an algorithm to find an optimal minimum composition of Co and Ni for best mechanical properties
 # and Ni content for best mechanical properties
 #
 
+
 # Function to minimise
 def total_function(x: np.ndarray):
     y = np.matmul(A_learned, x)
     function_to_min = x[5] + x[10]
     function_to_max = np.dot(y, analytical_weights)
-    #w2 is kept dynamic. This is discussed in the text document for this project.
+    # w2 is kept dynamic. This is discussed in the text document for this project.
     w2 = scale_factor * function_to_max / function_to_min
     return -w1 * function_to_max + w2 * function_to_min
+
 
 # Declare bounds for each element
 bounds_tuple_list = [
@@ -764,8 +768,10 @@ bounds_tuple_list = [
     (0, 5),
 ]
 
-#The function naturally is punitive to elongation, so it is increased by the small factor of 1.3 to encourage the algorithm to weigh it equally.
-print("The following three numbers you input will determine wether to give more weight to Yield Strength, Tensile Strength, or Elongation respectively. Please keep numbers between 0.5 and 2, where 0.5 is no care for that property and 2 is most care for that. If you want all three to be equally weighted input the same number")
+# The function naturally is punitive to elongation, so it is increased by the small factor of 1.3 to encourage the algorithm to weigh it equally.
+print(
+    "The following three numbers you input will determine wether to give more weight to Yield Strength, Tensile Strength, or Elongation respectively. Please keep numbers between 0.5 and 2, where 0.5 is no care for that property and 2 is most care for that. If you want all three to be equally weighted input the same number"
+)
 a = float(input("Yield Strength: "))
 b = float(input("Tensile Strength: "))
 c = float(input("Elongation: ")) * 1.3
@@ -787,7 +793,7 @@ cons = [
     {"type": "ineq", "fun": lambda x: np.min(A_learned @ x)},
 ]
 
-#Initiate variables for loop
+# Initiate variables for loop
 x_current = np.zeros(14)
 y_current = np.zeros(3)
 overall_function_to_max_current = 0
@@ -804,8 +810,8 @@ x_start = np.random.uniform(
 x_start = x_start * 100 / np.sum(x_start)
 
 for i in range(0, 1000):
-    #Sets a random scale factor as the ideal is very difficult to find
-    scale_factor = np.random.uniform(0.99999995, 1) 
+    # Sets a random scale factor as the ideal is very difficult to find
+    scale_factor = np.random.uniform(0.99999995, 1)
 
     # Minimises function
     ans = minimize(
@@ -817,15 +823,17 @@ for i in range(0, 1000):
         hess=lambda x: np.zeros((14, 14)),
     )
 
-    #Declares functions for manual loop
+    # Declares functions for manual loop
     overall_function_to_max = np.dot(np.matmul(A_learned, ans.x), analytical_weights)
     overall_function_to_min = ans.x[5] + ans.x[10]
 
-    #w3 defined the same as w2 just for the loop
+    # w3 defined the same as w2 just for the loop
     w3 = scale_factor * overall_function_to_max / overall_function_to_min
 
-    #Same as total_function
-    if (- w1 * overall_function_to_max + w3 * overall_function_to_min) < (- w1 * overall_function_to_max_current + w3 * overall_function_to_min_current):
+    # Same as total_function
+    if (-w1 * overall_function_to_max + w3 * overall_function_to_min) < (
+        -w1 * overall_function_to_max_current + w3 * overall_function_to_min_current
+    ):
         x_current = ans.x
         y_current = np.matmul(A_learned, ans.x)
         overall_function_to_max_current = overall_function_to_max
@@ -834,5 +842,5 @@ for i in range(0, 1000):
 
 # Optimal vector x
 print(x_current)
-#Optimal corresponding vector y
+# Optimal corresponding vector y
 print(y_current)
