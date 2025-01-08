@@ -7,8 +7,11 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import sklearn.linear_model
-from scipy import optimize
+from scipy.optimize import minimize
 from sklearn.metrics import r2_score
+import warnings
+
+warnings.filterwarnings("ignore", message="delta_grad == 0.0. Check if the approximated function is linear.")
 
 # Define fixed values as Literals
 Element = Literal[
@@ -491,22 +494,22 @@ refined_alloy_properties.to_csv(
 
 ## Creates columns for percentage error for each property
 #refined_alloy_properties["percent_error_combined"] = abs(
-#    (
-#        refined_alloy_properties["combined_properties"]
-#        - refined_alloy_properties["combined_predicted"]
-#    )
-#    / refined_alloy_properties["combined_properties"]
+#   (
+#       refined_alloy_properties["combined_properties"]
+#       - refined_alloy_properties["combined_predicted"]
+#   )
+#   / refined_alloy_properties["combined_properties"]
 #)
 #
 ## Seperates those into their respective columns
 #refined_alloy_properties["percent_error_ys"] = refined_alloy_properties[
-#    "percent_error_combined"
+#   "percent_error_combined"
 #].apply(lambda prop: prop[0])
 #refined_alloy_properties["percent_error_ts"] = refined_alloy_properties[
-#    "percent_error_combined"
+#   "percent_error_combined"
 #].apply(lambda prop: prop[1])
 #refined_alloy_properties["percent_error_e"] = refined_alloy_properties[
-#    "percent_error_combined"
+#   "percent_error_combined"
 #].apply(lambda prop: prop[2])
 #refined_alloy_properties = refined_alloy_properties.dropna()
 #
@@ -514,26 +517,25 @@ refined_alloy_properties.to_csv(
 ## These are explained and descirbed further in the text document
 #figure, axis = plt.subplots(2, 7)
 #
-#
 #plots_ys: dict[str, plt.Axes] = {}
 #k = 0
 #
 ## Loop generates the plots for each element
 #for i in range(0, len(ELEMENTS)):
-#    j = i
-#    if j >= int(len(ELEMENTS) / 2):
-#        k = 1
-#        j = i - int(len(ELEMENTS) / 2)
-#    plots_ys[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
-#        data=refined_alloy_properties,
-#        y=f"{ELEMENTS[i]}",
-#        x="percent_error_ys",
-#        ax=axis[k, j],
-#        fill=True,
-#        cmap="rocket_r",
-#    )
-#    plots_ys[f"{ELEMENTS[i]}_err"].set_xlim([0, 0.6])
-#    plots_ys[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
+#   j = i
+#   if j >= int(len(ELEMENTS) / 2):
+#       k = 1
+#       j = i - int(len(ELEMENTS) / 2)
+#   plots_ys[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+#       data=refined_alloy_properties,
+#       y=f"{ELEMENTS[i]}",
+#       x="percent_error_ys",
+#       ax=axis[k, j],
+#       fill=True,
+#       cmap="rocket_r",
+#   )
+#   plots_ys[f"{ELEMENTS[i]}_err"].set_xlim([0, 0.6])
+#   plots_ys[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
 #
 ## Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
 #plots_ys["fe_err"].set_ylim([60, 85])
@@ -562,20 +564,20 @@ refined_alloy_properties.to_csv(
 #
 ## Loop generates the plots for each element
 #for i in range(0, len(ELEMENTS)):
-#    j = i
-#    if j >= int(len(ELEMENTS) / 2):
-#        k = 1
-#        j = i - int(len(ELEMENTS) / 2)
-#    plots_ts[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
-#        data=refined_alloy_properties,
-#        y=f"{ELEMENTS[i]}",
-#        x="percent_error_ts",
-#        ax=axis[k, j],
-#        fill=True,
-#        cmap="rocket_r",
-#    )
-#    plots_ts[f"{ELEMENTS[i]}_err"].set_xlim([0, 0.6])
-#    plots_ts[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
+#   j = i
+#   if j >= int(len(ELEMENTS) / 2):
+#       k = 1
+#       j = i - int(len(ELEMENTS) / 2)
+#   plots_ts[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+#       data=refined_alloy_properties,
+#       y=f"{ELEMENTS[i]}",
+#       x="percent_error_ts",
+#       ax=axis[k, j],
+#       fill=True,
+#       cmap="rocket_r",
+#   )
+#   plots_ts[f"{ELEMENTS[i]}_err"].set_xlim([0, 0.6])
+#   plots_ts[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
 #
 ## Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
 #plots_ts["fe_err"].set_ylim([60, 85])
@@ -604,20 +606,20 @@ refined_alloy_properties.to_csv(
 #
 ## Loop generates the plots for each element
 #for i in range(0, len(ELEMENTS)):
-#    j = i
-#    if j >= int(len(ELEMENTS) / 2):
-#        k = 1
-#        j = i - int(len(ELEMENTS) / 2)
-#    plots_e[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
-#        data=refined_alloy_properties,
-#        y=f"{ELEMENTS[i]}",
-#        x="percent_error_e",
-#        ax=axis[k, j],
-#        fill=True,
-#        cmap="cividis_r",
-#    )
-#    plots_e[f"{ELEMENTS[i]}_err"].set_xlim([0, 2.5])
-#    plots_e[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
+#   j = i
+#   if j >= int(len(ELEMENTS) / 2):
+#       k = 1
+#       j = i - int(len(ELEMENTS) / 2)
+#   plots_e[f"{ELEMENTS[i]}_err"] = sns.kdeplot(
+#       data=refined_alloy_properties,
+#       y=f"{ELEMENTS[i]}",
+#       x="percent_error_e",
+#       ax=axis[k, j],
+#       fill=True,
+#       cmap="cividis_r",
+#   )
+#   plots_e[f"{ELEMENTS[i]}_err"].set_xlim([0, 2.5])
+#   plots_e[f"{ELEMENTS[i]}_err"].set_ylim(bottom=0)
 #
 ## Sets ylims for each plot, this was decided by looking at the graphs after they have been plotted
 #plots_e["fe_err"].set_ylim([60, 85])
@@ -646,7 +648,6 @@ refined_alloy_properties.to_csv(
 #
 #def cross_validation(n: int, k: int, data: pd.DataFrame):
 #    """A cross-validation algorithm to validate a linear model
-#
 #    Parameters
 #    ----------
 #    n : int
@@ -655,7 +656,6 @@ refined_alloy_properties.to_csv(
 #        The number of samples we obtain from the data
 #    data : pd.DataFrame
 #        The data to validate with
-#
 #    Returns
 #    -------
 #    errors_df : pd.DataFrame
@@ -668,15 +668,15 @@ refined_alloy_properties.to_csv(
 #    logged_std: np.ndarray = np.zeros([3, loop_range])
 #    logged_r_squared: np.ndarray = np.zeros([3, loop_range])
 #    logged_mape: np.ndarray = np.zeros([3, loop_range])
-#
+#    
 #    for i in range(0, loop_range, k - 1):
 #        # Generates stratified samples
 #        samples: list[pd.DataFrame] = dataframe_test.data_shuffler(k)
 #        # Sets the first sample to be our control which the model is not trained on
 #        control_sample: pd.DataFrame = samples[0].dropna()
 #        properties_array: np.ndarray = np.array(
-#            control_sample["combined_properties"].values.tolist()
-#        )
+#        control_sample["combined_properties"].values.tolist()
+#    )
 #
 #        # Trains sample for each non-control sample
 #        for j in range(0, k - 1):
@@ -737,79 +737,102 @@ refined_alloy_properties.to_csv(
 # and Ni content for best mechanical properties
 #
 
-bounds: np.ndarray = np.array(
-    [
-        [
-            refined_alloy_properties[element].min(),
-            refined_alloy_properties[element].max(),
-        ]
-        for element in ELEMENTS
-    ]
-)
+# Function to minimise
+def total_function(x: np.ndarray):
+    y = np.matmul(A_learned, x)
+    function_to_min = x[5] + x[10]
+    function_to_max = np.dot(y, analytical_weights)
+    #w2 is kept dynamic. This is discussed in the text document for this project.
+    w2 = scale_factor * function_to_max / function_to_min
+    return -w1 * function_to_max + w2 * function_to_min
 
-bounds_tuple_list = list(map(tuple, bounds.reshape((14, 2))))
+# Declare bounds for each element
+bounds_tuple_list = [
+    (40, 100),
+    (0, 1),
+    (0, 5),
+    (0, 5),
+    (0, 20),
+    (0, 25),
+    (0, 15),
+    (0, 5),
+    (0, 0.5),
+    (0, 5),
+    (0, 25),
+    (0, 15),
+    (0, 3),
+    (0, 5),
+]
 
-initial_ranges: np.ndarray = np.array(
-    [
-        [
-            0.75 * bounds[i, 0] + 0.25 * bounds[i, 1],
-            0.75 * bounds[i, 1] + 0.25 * bounds[i, 0],
-        ]
-        for i in range(0, 14)
-    ]
-)
+#The function naturally is punitive to elongation, so it is increased by the small factor of 1.3 to encourage the algorithm to weigh it equally.
+print("The following three numbers you input will determine wether to give more weight to Yield Strength, Tensile Strength, or Elongation respectively. Please keep numbers between 0.5 and 2, where 0.5 is no care for that property and 2 is most care for that. If you want all three to be equally weighted input the same number")
+a = float(input("Yield Strength: "))
+b = float(input("Tensile Strength: "))
+c = float(input("Elongation: ")) * 1.3
+prop_weights = np.array([a, b, c])
 
-x_start = np.random.uniform(
-    low=initial_ranges[:, 0].transpose(),
-    high=initial_ranges[:, 1].transpose(),
-    size=(1, 14),
-).transpose()
-
-x_start = x_start * 100 / np.sum(x_start)
-
-w1 = 0.0025
-w2 = 1
+# Calculates weights for each property
 analytical_weights_intermediate = np.mean(
     reduced_alloy_properties["combined_predicted"]
 )
 analytical_weights = (
     np.sum(analytical_weights_intermediate) / analytical_weights_intermediate
 )
-alpha = analytical_weights[0]
-beta = analytical_weights[1]
-gamma = analytical_weights[2]
+analytical_weights = analytical_weights * prop_weights
+w1 = 1
 
-y_current = np.matmul(A_learned, x_start)
+# Constrains every x vector to sum to 100 and y must be positive
+cons = [
+    {"type": "eq", "fun": lambda x: 100 - sum(x)},
+    {"type": "ineq", "fun": lambda x: np.min(A_learned @ x)},
+]
 
-function_to_min = x_start[5] + x_start[10]
-function = alpha * y_current[0] + beta * y_current[1] + gamma * y_current[2]
+#Initiate variables for loop
+x_current = np.zeros(14)
+y_current = np.zeros(3)
+overall_function_to_max_current = 0
+overall_function_to_min_current = 0
 
-x_current = x_start
+# Generates random initial guess within bounds
+x_start = np.random.uniform(
+    low=[np.array(bounds_tuple_list[i][0]) for i in range(0, 14)],
+    high=[np.array(bounds_tuple_list[i][1]) for i in range(0, 14)],
+    size=(14),
+)
 
-print(sum(x_current))
+# Sets initial guess to sum to 100
+x_start = x_start * 100 / np.sum(x_start)
 
-def total_function(x: np.ndarray):
-   x_current[5] = x[0]
-   x_current[10] = x[1]
-   ratio = (100 - sum(x)) / (sum(x_current) - sum(x))
-   x_current[0:5] = [np.round(x_current[i] * ratio, 2) for i in range(0, 5)]
-   x_current[6:10] = [np.round(x_current[i] * ratio, 2) for i in range(5, 9)]
-   x_current[11:14] = [np.round(x_current[i] * ratio, 2) for i in range(9, 12)]
-   function_to_min = sum(x)
-   y = np.matmul(A_learned, x_current)
-   function_to_max = alpha * y[0] + beta * y[1] + gamma * y[2]
-   return w1 * function_to_max - w2 * function_to_min
+for i in range(0, 1000):
+    #Sets a random scale factor as the ideal is very difficult to find
+    scale_factor = np.random.uniform(0.99999995, 1) 
 
-for _ in range(0, 1000):
-    x_start = np.random.uniform(
-        low=initial_ranges[:, 0].transpose(),
-        high=initial_ranges[:, 1].transpose(),
-        size=(1, 14),
-    ).transpose()
+    # Minimises function
+    ans = minimize(
+        total_function,
+        x_start,
+        bounds=bounds_tuple_list,
+        constraints=cons,
+        method="trust-constr",
+        hess=lambda x: np.zeros((14, 14)),
+    )
 
-    x_start = x_start * 100 / np.sum(x_start)
-    ans = optimize.minimize(total_function, np.array([x_start[5], x_start[10]]).reshape(2), bounds=[bounds_tuple_list[5], bounds_tuple_list[10]])
+    #Declares functions for manual loop
+    overall_function_to_max = np.dot(np.matmul(A_learned, ans.x), analytical_weights)
+    overall_function_to_min = ans.x[5] + ans.x[10]
 
-    if sum(x_current) > 105:
-        print(sum(x_current))
-        print(ans.x)
+    #w3 defined the same as w2 just for the loop
+    w3 = scale_factor * overall_function_to_max / overall_function_to_min
+
+    #Same as total_function
+    if (- w1 * overall_function_to_max + w3 * overall_function_to_min) < (- w1 * overall_function_to_max_current + w3 * overall_function_to_min_current):
+        x_current = ans.x
+        y_current = np.matmul(A_learned, ans.x)
+        overall_function_to_max_current = overall_function_to_max
+        overall_function_to_min_current = overall_function_to_min
+
+
+# Optimal vector x
+print(x_current)
+#Optimal corresponding vector y
+print(y_current)
