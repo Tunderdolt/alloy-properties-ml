@@ -840,7 +840,7 @@ x_start = np.random.uniform(
 # Sets initial guess to sum to 100
 x_start = x_start * 100 / np.sum(x_start)
 
-for i in range(0, 100):
+for i in range(0, 10):
     # Sets a random scale factor as the ideal is very difficult to find
     scale_factor = np.random.uniform(0.99999995, 1)
 
